@@ -1,4 +1,4 @@
-%global commit 179c0a64fdc73d491f9604eebc7966ea9d4d613f
+%global commit 8bd77f8bbb2b50c1ca4f04a30f9e4e8f5b33ffc0
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
 %global libsolv_version 0.6.21-1
@@ -17,7 +17,7 @@
 
 Name:           libdnf
 Version:        0.7.0
-Release:        0.1git%{shortcommit}%{?dist}
+Release:        0.2git%{shortcommit}%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/%{oldname}
@@ -154,5 +154,8 @@ popd
 %endif
 
 %changelog
+* Fri Nov 04 2016 Igor Gnatenko <ignatenko@redhat.com> - 0.7.0-0.2git8bd77f8
+- Update to latest snapshot
+
 * Thu Sep 29 2016 Igor Gnatenko <ignatenko@redhat.com> - 0.7.0-0.1git179c0a6
 - Initial package

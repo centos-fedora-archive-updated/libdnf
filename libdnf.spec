@@ -1,4 +1,4 @@
-%global commit 8bd77f8bbb2b50c1ca4f04a30f9e4e8f5b33ffc0
+%global commit f9b798cadb6821f9cffd5c0331578b3f7c19d699
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
 %global libsolv_version 0.6.21-1
@@ -17,7 +17,7 @@
 
 Name:           libdnf
 Version:        0.7.0
-Release:        0.2git%{shortcommit}%{?dist}
+Release:        0.3git%{shortcommit}%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/%{oldname}
@@ -89,13 +89,13 @@ mkdir build-py3
 
 %build
 pushd build-py2
-  %cmake -DWITH_MAN=OFF ../ %{!?_with_valgrind:-DDISABLE_VALGRIND=1}
+  %cmake -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1}
   %make_build
 popd
 
 %if %{with python3}
 pushd build-py3
-  %cmake -DPYTHON_DESIRED:str=3 -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?_with_valgrind:-DDISABLE_VALGRIND=1}
+  %cmake -DPYTHON_DESIRED:str=3 -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1}
   %make_build
 popd
 %endif
@@ -154,6 +154,9 @@ popd
 %endif
 
 %changelog
+* Thu Dec 01 2016 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 0.7.0-0.3gitf9b798c
+- Update to latest snapshot
+
 * Fri Nov 04 2016 Igor Gnatenko <ignatenko@redhat.com> - 0.7.0-0.2git8bd77f8
 - Update to latest snapshot
 

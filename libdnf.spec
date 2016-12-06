@@ -17,7 +17,7 @@
 
 Name:           libdnf
 Version:        0.7.0
-Release:        1.3git%{shortcommit}%{?dist}
+Release:        0.4git%{shortcommit}%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/%{oldname}
@@ -154,7 +154,7 @@ popd
 %endif
 
 %changelog
-* Tue Dec 06 2016 Martin Hatina <mhatina@redhat.com> - 0.7.0-1.3gitf9b798c
+* Tue Dec 06 2016 Martin Hatina <mhatina@redhat.com> - 0.7.0-0.4gitf9b798c
 - Increase conflict version of dnf
 
 * Thu Dec 01 2016 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 0.7.0-0.3gitf9b798c

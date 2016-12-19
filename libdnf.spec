@@ -13,8 +13,6 @@
 %bcond_without python3
 %endif
 
-%global oldname libhif
-
 Name:           libdnf
 Version:        0.7.0
 Release:        0.6git%{shortcommit}%{?dist}

@@ -17,10 +17,10 @@
 
 Name:           libdnf
 Version:        0.7.0
-Release:        0.5git%{shortcommit}%{?dist}
+Release:        0.6git%{shortcommit}%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
-URL:            https://github.com/rpm-software-management/%{oldname}
+URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{commit}/%{name}-%{shortcommit}.tar.gz
 
 BuildRequires:  cmake
@@ -81,7 +81,7 @@ Python 3 bindings for the hawkey library.
 %endif
 
 %prep
-%autosetup -n %{oldname}-%{commit}
+%autosetup -n %{name}-%{commit}
 mkdir build-py2
 %if %{with python3}
 mkdir build-py3
@@ -154,6 +154,9 @@ popd
 %endif
 
 %changelog
+* Mon Dec 19 2016 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 0.7.0-0.6gitf9b798c
+- Use new upstream URL
+
 * Tue Dec 13 2016 Stratakis Charalampos <cstratak@redhat.com> - 0.7.0-0.5gitf9b798c
 - Rebuild for Python 3.6
 

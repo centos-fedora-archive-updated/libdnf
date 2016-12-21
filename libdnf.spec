@@ -15,7 +15,7 @@
 
 Name:           libdnf
 Version:        0.7.0
-Release:        0.6git%{shortcommit}%{?dist}
+Release:        0.7git%{shortcommit}%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -152,6 +152,9 @@ popd
 %endif
 
 %changelog
+* Wed Dec 21 2016 Peter Robinson <pbrobinson@fedoraproject.org> 0.7.0-0.7gitf9b798c
+- Rebuild for Python 3.6
+
 * Mon Dec 19 2016 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 0.7.0-0.6gitf9b798c
 - Use new upstream URL
 

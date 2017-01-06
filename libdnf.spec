@@ -1,6 +1,3 @@
-%global commit f9b798cadb6821f9cffd5c0331578b3f7c19d699
-%global shortcommit %(c=%{commit}; echo ${c:0:7})
-
 %global libsolv_version 0.6.21-1
 %global dnf_conflict 2.0.0-0.rc2.4
 
@@ -13,13 +10,23 @@
 %bcond_without python3
 %endif
 
+%if 0%{?rhel}
+%bcond_without rhsm
+%else
+%bcond_with rhsm
+%endif
+
+%global _cmake_opts \\\
+    -DENABLE_RHSM_SUPPORT=%{?with_rhsm:ON}%{!?with_rhsm:OFF} \\\
+    %{nil}
+
 Name:           libdnf
-Version:        0.7.0
-Release:        0.7git%{shortcommit}%{?dist}
+Version:        0.7.1
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
-Source0:        %{url}/archive/%{commit}/%{name}-%{shortcommit}.tar.gz
+Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -33,6 +40,9 @@ BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.44.0
 BuildRequires:  pkgconfig(gtk-doc)
 BuildRequires:  pkgconfig(gobject-introspection-1.0)
 BuildRequires:  rpm-devel >= 4.11.0
+%if %{with rhsm}
+BuildRequires:  pkgconfig(librhsm)
+%endif
 
 Requires:       libsolv%{?_isa} >= %{libsolv_version}
 
@@ -87,13 +97,13 @@ mkdir build-py3
 
 %build
 pushd build-py2
-  %cmake -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1}
+  %cmake -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 
 %if %{with python3}
 pushd build-py3
-  %cmake -DPYTHON_DESIRED:str=3 -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1}
+  %cmake -DPYTHON_DESIRED:str=3 -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 %endif
@@ -152,6 +162,9 @@ popd
 %endif
 
 %changelog
+* Fri Jan 06 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.7.1-1
+- 0.7.1
+
 * Wed Dec 21 2016 Peter Robinson <pbrobinson@fedoraproject.org> 0.7.0-0.7gitf9b798c
 - Rebuild for Python 3.6
 

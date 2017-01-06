@@ -89,7 +89,7 @@ Python 3 bindings for the hawkey library.
 %endif
 
 %prep
-%autosetup -n %{name}-%{commit}
+%autosetup
 mkdir build-py2
 %if %{with python3}
 mkdir build-py3

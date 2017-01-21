@@ -58,55 +58,16 @@ BuildRequires:  python-nose
 %description devel
 Development files for %{name}.
 
-%package -n python2-hawkey
-Summary:        Python 2 bindings for the hawkey library
-%{?python_provide:%python_provide python2-hawkey}
-BuildRequires:  python2-devel
-BuildRequires:  python-nose
-Requires:       %{name}%{?_isa} = %{version}-%{release}
-# Fix problem with hawkey - dnf version incompatibility
-# Can be deleted for distros where only python2-dnf >= 2.0.0
-Conflicts:      python2-dnf < %{dnf_conflict}
-Conflicts:      python-dnf < %{dnf_conflict}
-
-%description -n python2-hawkey
-Python 2 bindings for the hawkey library.
-
-%if %{with python3}
-%package -n python3-hawkey
-Summary:        Python 3 bindings for the hawkey library
-%{?system_python_abi}
-%{?python_provide:%python_provide python3-hawkey}
-BuildRequires:  python3-devel
-BuildRequires:  python3-nose
-Requires:       %{name}%{?_isa} = %{version}-%{release}
-# Fix problem with hawkey - dnf version incompatibility
-# Can be deleted for distros where only python3-dnf >= 2.0.0
-Conflicts:      python3-dnf < %{dnf_conflict}
-
-%description -n python3-hawkey
-Python 3 bindings for the hawkey library.
-%endif
-
 %prep
 %autosetup
-mkdir build-py2
-%if %{with python3}
-mkdir build-py3
-%endif
+sed -i -e "/python/d" -e "/docs\/hawkey/d" CMakeLists.txt
 
 %build
-pushd build-py2
+mkdir build
+pushd build
   %cmake -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
-
-%if %{with python3}
-pushd build-py3
-  %cmake -DPYTHON_DESIRED:str=3 -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
-  %make_build
-popd
-%endif
 
 %check
 if [ "$(id -u)" == "0" ] ; then
@@ -116,26 +77,12 @@ Please build the package as non-root user.
 ERROR
         exit 1
 fi
-pushd build-py2
+pushd build
   make ARGS="-V" test
 popd
-%if %{with python3}
-# Run just the Python tests, not all of them, since
-# we have coverage of the core from the first build
-pushd build-py3/python/hawkey/tests
-  make ARGS="-V" test
-popd
-%endif
 
 %install
-pushd build-py2
-  %make_install
-popd
-%if %{with python3}
-pushd build-py3
-  %make_install
-popd
-%endif
+%make_install -C build
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
@@ -152,14 +99,6 @@ popd
 %{_libdir}/pkgconfig/%{name}.pc
 %{_includedir}/%{name}/
 %{_datadir}/gir-1.0/Dnf-*.gir
-
-%files -n python2-hawkey
-%{python2_sitearch}/hawkey/
-
-%if %{with python3}
-%files -n python3-hawkey
-%{python3_sitearch}/hawkey/
-%endif
 
 %changelog
 * Fri Jan 06 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.7.1-1

@@ -10,7 +10,7 @@
 %bcond_without python3
 %endif
 
-%if 0%{?rhel}
+%if 0%{?rhel} && 0%{!?centos}
 %bcond_without rhsm
 %else
 %bcond_with rhsm
@@ -21,7 +21,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.7.4
+Version:        0.8.0
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -162,6 +162,9 @@ popd
 %endif
 
 %changelog
+* Tue Mar 21 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.8.0-1
+- Update to 0.8.0
+
 * Mon Feb 20 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.7.4-1
 - Update to 0.7.4
 

@@ -21,7 +21,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.9.0
+Version:        0.9.1
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -36,7 +36,7 @@ BuildRequires:  pkgconfig(check)
 %if %{with valgrind}
 BuildRequires:  valgrind
 %endif
-BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.44.0
+BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.46.0
 BuildRequires:  pkgconfig(gtk-doc)
 BuildRequires:  pkgconfig(gobject-introspection-1.0)
 BuildRequires:  rpm-devel >= 4.11.0
@@ -162,6 +162,9 @@ popd
 %endif
 
 %changelog
+* Mon Jun 12 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.9.1-1
+- Update to 0.9.1
+
 * Mon May 22 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.9.0-1
 - Update to 0.9.0
 

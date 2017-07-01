@@ -21,7 +21,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.9.1
+Version:        0.9.2
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -53,7 +53,6 @@ A Library providing simplified C and Python API to libsolv.
 Summary:        Development files for %{name}
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       libsolv-devel%{?_isa} >= %{libsolv_version}
-BuildRequires:  python-nose
 
 %description devel
 Development files for %{name}.
@@ -62,7 +61,11 @@ Development files for %{name}.
 Summary:        Python 2 bindings for the hawkey library
 %{?python_provide:%python_provide python2-hawkey}
 BuildRequires:  python2-devel
+%if 0%{?rhel} && 0%{?rhel} <= 7
 BuildRequires:  python-nose
+%else
+BuildRequires:  python2-nose
+%endif
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility
 # Can be deleted for distros where only python2-dnf >= 2.0.0
@@ -162,6 +165,9 @@ popd
 %endif
 
 %changelog
+* Sat Jul 01 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.9.2-1
+- Update to 0.9.2
+
 * Mon Jun 12 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.9.1-1
 - Update to 0.9.1
 

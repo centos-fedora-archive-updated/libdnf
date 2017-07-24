@@ -1,5 +1,5 @@
 %global libsolv_version 0.6.21-1
-%global dnf_conflict 2.5.0
+%global dnf_conflict 2.6.2
 
 %bcond_with valgrind
 
@@ -21,7 +21,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.9.2
+Version:        0.9.3
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -165,6 +165,9 @@ popd
 %endif
 
 %changelog
+* Mon Jul 24 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.9.3-1
+- Update to 0.9.3
+
 * Sat Jul 01 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.9.2-1
 - Update to 0.9.2
 

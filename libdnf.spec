@@ -22,7 +22,7 @@
 
 Name:           libdnf
 Version:        0.9.3
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -165,6 +165,9 @@ popd
 %endif
 
 %changelog
+* Thu Aug 10 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.9.3-5
+- Rebuilt for RPM soname bump
+
 * Thu Aug 10 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.9.3-4
 - Rebuilt for RPM soname bump
 

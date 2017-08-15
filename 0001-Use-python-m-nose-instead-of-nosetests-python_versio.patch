@@ -1,0 +1,28 @@
+From a69d7fdf52561db56f7c9451872b919db23ee529 Mon Sep 17 00:00:00 2001
+From: Lumir Balhar <lbalhar@redhat.com>
+Date: Thu, 10 Aug 2017 18:15:42 +0200
+Subject: [PATCH] Use `python -m nose` instead of nosetests-<python_version> to
+ run tests.
+
+This change enables us to build libdnf with various Python version
+even with nose available only as a module without binaries.
+---
+ python/hawkey/tests/tests/run_nosetests.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/python/hawkey/tests/tests/run_nosetests.in b/python/hawkey/tests/tests/run_nosetests.in
+index 7b23cca..1361b59 100755
+--- a/python/hawkey/tests/tests/run_nosetests.in
++++ b/python/hawkey/tests/tests/run_nosetests.in
+@@ -17,7 +17,7 @@ def fatal(msg):
+ 
+ childenv = dict(os.environ)
+ childenv['PYTHONPATH'] = '${CMAKE_BINARY_DIR}/python/hawkey'
+-subprocess.check_call(['nosetests-${PYTHON_MAJOR_DOT_MINOR_VERSION}',
++subprocess.check_call(['${PYTHON_EXECUTABLE}', '-m', 'nose',
+                        '--with-xunit', '--xunit-file=xunit.xml',
+                        '-s', '-v', '${CMAKE_CURRENT_SOURCE_DIR}'],
+                       env=childenv)
+-- 
+2.13.4
+

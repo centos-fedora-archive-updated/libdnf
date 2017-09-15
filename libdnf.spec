@@ -17,7 +17,11 @@
 %endif
 
 %bcond_without python2
+%if 0%{?fedora} >= 27 || 0%{?rhel} > 7
 %bcond_without platform_python
+%else
+%bcond_with platform_python
+%endif
 
 %global _cmake_opts \\\
     -DENABLE_RHSM_SUPPORT=%{?with_rhsm:ON}%{!?with_rhsm:OFF} \\\
@@ -25,7 +29,7 @@
 
 Name:           libdnf
 Version:        0.9.3
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -235,6 +239,9 @@ popd
 %endif
 
 %changelog
+* Fri Sep 15 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.9.3-8
+- Disable platform python on old releases
+
 * Tue Aug 15 2017 Lumír Balhar <lbalhar@redhat.com> - 0.9.3-7
 - Add platform-python subpackage
 

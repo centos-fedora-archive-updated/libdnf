@@ -1,0 +1,1265 @@
+From a1165287a56f14c0e3031df39c436c882ff44e69 Mon Sep 17 00:00:00 2001
+From: Martin Hatina <mhatina@redhat.com>
+Date: Mon, 14 Aug 2017 09:16:43 +0200
+Subject: [PATCH 1/3] add nsvcap parsing support
+
+---
+ libdnf/CMakeLists.txt            |   2 +
+ libdnf/hy-module-form-private.h  |  34 ++++++
+ libdnf/hy-module-form.c          | 118 ++++++++++++++++++
+ libdnf/hy-module-form.h          |  50 ++++++++
+ libdnf/hy-subject-private.c      |  71 ++++++++++-
+ libdnf/hy-subject-private.h      |   2 +
+ libdnf/hy-subject.c              | 114 ++++++++++++++----
+ libdnf/hy-subject.h              |  30 +++++
+ libdnf/hy-types.h                |   7 ++
+ python/hawkey/CMakeLists.txt     |   1 +
+ python/hawkey/__init__.py        |  53 +++++++-
+ python/hawkey/hawkeymodule.c     |  23 ++++
+ python/hawkey/module-form-py.c   | 252 +++++++++++++++++++++++++++++++++++++++
+ python/hawkey/module-form-py.h   |  32 +++++
+ python/hawkey/possibilities-py.c |   5 +
+ python/hawkey/subject-py.c       |  66 ++++++++++
+ 16 files changed, 836 insertions(+), 24 deletions(-)
+ create mode 100644 libdnf/hy-module-form-private.h
+ create mode 100644 libdnf/hy-module-form.c
+ create mode 100644 libdnf/hy-module-form.h
+ create mode 100644 python/hawkey/module-form-py.c
+ create mode 100644 python/hawkey/module-form-py.h
+
+diff --git a/libdnf/CMakeLists.txt b/libdnf/CMakeLists.txt
+index 111585e..6e25c57 100644
+--- a/libdnf/CMakeLists.txt
++++ b/libdnf/CMakeLists.txt
+@@ -5,6 +5,7 @@ SET (LIBDNF_SRCS
+     hy-goal.c
+     hy-iutil.c
+     hy-nevra.c
++    hy-module-form.c
+     dnf-reldep.c
+     dnf-reldep-list.c
+     hy-package.c
+@@ -67,6 +68,7 @@ TARGET_LINK_LIBRARIES(hth libdnf
+ SET(LIBHAWKEY_headers
+     hy-goal.h
+     hy-nevra.h
++    hy-module-form.h
+     hy-package.h
+     hy-packageset.h
+     hy-query.h
+diff --git a/libdnf/hy-module-form-private.h b/libdnf/hy-module-form-private.h
+new file mode 100644
+index 0000000..a402f7d
+--- /dev/null
++++ b/libdnf/hy-module-form-private.h
+@@ -0,0 +1,34 @@
++/*
++ * Copyright (C) 2017 Red Hat, Inc.
++ *
++ * Licensed under the GNU Lesser General Public License Version 2.1
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#ifndef LIBDNF_HY_MODULE_FORM_PRIVATE_H
++#define LIBDNF_HY_MODULE_FORM_PRIVATE_H
++
++struct _HyModuleForm {
++    char *name;
++    char *stream;
++    int version;
++    char *context;
++    char *arch;
++    char *profile;
++};
++
++
++#endif //LIBDNF_HY_MODULE_FORM_PRIVATE_H
+diff --git a/libdnf/hy-module-form.c b/libdnf/hy-module-form.c
+new file mode 100644
+index 0000000..5bb0ff9
+--- /dev/null
++++ b/libdnf/hy-module-form.c
+@@ -0,0 +1,118 @@
++/*
++ * Copyright (C) 2017 Red Hat, Inc.
++ *
++ * Licensed under the GNU Lesser General Public License Version 2.1
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++#include <solv/util.h>
++#include "hy-query.h"
++#include "hy-module-form.h"
++#include "hy-module-form-private.h"
++#include "dnf-sack.h"
++#include "hy-types.h"
++
++
++static void
++hy_module_form_clear(HyModuleForm module_form)
++{
++    module_form->name = NULL;
++    module_form->stream = NULL;
++    module_form->version = -1L;
++    module_form->context = NULL;
++    module_form->arch = NULL;
++    module_form->profile = NULL;
++}
++
++HyModuleForm
++hy_module_form_create()
++{
++    HyModuleForm module_form = g_malloc0(sizeof(*module_form));
++    hy_module_form_clear(module_form);
++    return module_form;
++}
++
++void
++hy_module_form_free(HyModuleForm module_form)
++{
++    g_free(module_form->name);
++    g_free(module_form->stream);
++    g_free(module_form->context);
++    g_free(module_form->arch);
++    g_free(module_form->profile);
++    g_free(module_form);
++}
++
++HyModuleForm
++hy_module_form_clone(HyModuleForm module_form)
++{
++    HyModuleForm clone = hy_module_form_create();
++    clone->name = g_strdup(module_form->name);
++    clone->stream = g_strdup(module_form->stream);
++    clone->version = module_form->version;
++    clone->context = g_strdup(module_form->context);
++    clone->arch = g_strdup(module_form->arch);
++    clone->profile = g_strdup(module_form->profile);
++    return clone;
++}
++
++static inline char **
++get_string(HyModuleForm module_form, int which)
++{
++    switch (which) {
++        case HY_MODULE_FORM_NAME:
++            return &(module_form->name);
++        case HY_MODULE_FORM_STREAM:
++            return &(module_form->stream);
++        case HY_MODULE_FORM_CONTEXT:
++            return &(module_form->context);
++        case HY_MODULE_FORM_ARCH:
++            return &(module_form->arch);
++        case HY_MODULE_FORM_PROFILE:
++            return &(module_form->profile);
++        default:
++            return NULL;
++    }
++}
++
++const char *
++hy_module_form_get_string(HyModuleForm module_form, int which)
++{
++    return *get_string(module_form, which);
++}
++
++void
++hy_module_form_set_string(HyModuleForm module_form, int which, const char* str_val)
++{
++    char** attr = get_string(module_form, which);
++    g_free(*attr);
++    *attr = g_strdup(str_val);
++}
++
++int
++hy_module_form_get_version(HyModuleForm module_form)
++{
++    return module_form->version;
++}
++
++void
++hy_module_form_set_version(HyModuleForm module_form, int version)
++{
++    module_form->version = version;
++}
+diff --git a/libdnf/hy-module-form.h b/libdnf/hy-module-form.h
+new file mode 100644
+index 0000000..3a11aa9
+--- /dev/null
++++ b/libdnf/hy-module-form.h
+@@ -0,0 +1,50 @@
++/*
++ * Copyright (C) 2017 Red Hat, Inc.
++ *
++ * Licensed under the GNU Lesser General Public License Version 2.1
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#ifndef LIBDNF_HY_MODULE_FORM_H
++#define LIBDNF_HY_MODULE_FORM_H
++
++#include "hy-types.h"
++#include "dnf-sack.h"
++
++#include <glib.h>
++
++G_BEGIN_DECLS
++
++enum _hy_module_form_param_e {
++    HY_MODULE_FORM_NAME = 0,
++    HY_MODULE_FORM_STREAM = 1,
++    HY_MODULE_FORM_VERSION = 2,
++    HY_MODULE_FORM_CONTEXT = 3,
++    HY_MODULE_FORM_ARCH = 4,
++    HY_MODULE_FORM_PROFILE = 5
++};
++
++HyModuleForm hy_module_form_create(void);
++void hy_module_form_free(HyModuleForm module_form);
++HyModuleForm hy_module_form_clone(HyModuleForm module_form);
++const char *hy_module_form_get_string(HyModuleForm module_form, int which);
++int hy_module_form_get_version(HyModuleForm module_form);
++void hy_module_form_set_version(HyModuleForm module_form, int epoch);
++void hy_module_form_set_string(HyModuleForm module_form, int which, const char* str_val);
++
++G_END_DECLS
++
++#endif //LIBDNF_HY_MODULE_FORM_H
+diff --git a/libdnf/hy-subject-private.c b/libdnf/hy-subject-private.c
+index 65e34c8..df9cae8 100644
+--- a/libdnf/hy-subject-private.c
++++ b/libdnf/hy-subject-private.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013 Red Hat, Inc.
++ * Copyright (C) 2013-2017 Red Hat, Inc.
+  *
+  * Licensed under the GNU Lesser General Public License Version 2.1
+  *
+@@ -18,10 +18,13 @@
+  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+  */
+ 
++#include <stdio.h>
+ #include <regex.h>
+ #include <stdlib.h>
+ #include "hy-nevra.h"
+ #include "hy-nevra-private.h"
++#include "hy-module-form.h"
++#include "hy-module-form-private.h"
+ #include "hy-iutil.h"
+ #include "hy-subject-private.h"
+ 
+@@ -33,6 +36,32 @@ const char *nevra_form_regex[] = {
+     "^([^:]+)()()()()()$"
+ };
+ 
++#define MODULE_NAME "([-a-zA-Z0-9\\._]+)"
++#define MODULE_STREAM MODULE_NAME
++#define MODULE_VERSION "([0-9]+)"
++#define MODULE_CONTEXT "([0-9a-f]+)"
++#define MODULE_ARCH MODULE_NAME
++#define MODULE_PROFILE MODULE_NAME
++
++const char *module_form_regex[] = {
++    "^" MODULE_NAME ":" MODULE_STREAM ":" MODULE_VERSION ":" MODULE_CONTEXT "::?" MODULE_ARCH "\\/"  MODULE_PROFILE "$",
++    "^" MODULE_NAME ":" MODULE_STREAM ":" MODULE_VERSION ":" MODULE_CONTEXT "::?" MODULE_ARCH "\\/?" "()"           "$",
++    "^" MODULE_NAME ":" MODULE_STREAM ":" MODULE_VERSION     "()"           "::"  MODULE_ARCH "\\/"  MODULE_PROFILE "$",
++    "^" MODULE_NAME ":" MODULE_STREAM ":" MODULE_VERSION     "()"           "::"  MODULE_ARCH "\\/?" "()"           "$",
++    "^" MODULE_NAME ":" MODULE_STREAM     "()"               "()"           "::"  MODULE_ARCH "\\/"  MODULE_PROFILE "$",
++    "^" MODULE_NAME ":" MODULE_STREAM     "()"               "()"           "::"  MODULE_ARCH "\\/?" "()"           "$",
++    "^" MODULE_NAME ":" MODULE_STREAM ":" MODULE_VERSION ":" MODULE_CONTEXT       "()"        "\\/"  MODULE_PROFILE "$",
++    "^" MODULE_NAME ":" MODULE_STREAM ":" MODULE_VERSION     "()"                 "()"        "\\/"  MODULE_PROFILE "$",
++    "^" MODULE_NAME ":" MODULE_STREAM ":" MODULE_VERSION ":" MODULE_CONTEXT       "()"        "\\/?" "()"           "$",
++    "^" MODULE_NAME ":" MODULE_STREAM ":" MODULE_VERSION     "()"                 "()"        "\\/?" "()"           "$",
++    "^" MODULE_NAME ":" MODULE_STREAM     "()"               "()"                 "()"        "\\/"  MODULE_PROFILE "$",
++    "^" MODULE_NAME ":" MODULE_STREAM     "()"               "()"                 "()"        "\\/?" "()"           "$",
++    "^" MODULE_NAME     "()"              "()"               "()"           "::"  MODULE_ARCH "\\/"  MODULE_PROFILE "$",
++    "^" MODULE_NAME     "()"              "()"               "()"           "::"  MODULE_ARCH "\\/?" "()"           "$",
++    "^" MODULE_NAME     "()"              "()"               "()"                 "()"        "\\/"  MODULE_PROFILE "$",
++    "^" MODULE_NAME     "()"              "()"               "()"                 "()"        "\\/?" "()"           "$"
++};
++
+ #define MATCH_EMPTY(i) (matches[i].rm_so >= matches[i].rm_eo)
+ 
+ int
+@@ -62,4 +91,44 @@ nevra_possibility(char *nevra_str, int form, HyNevra nevra)
+     return 0;
+ }
+ 
++int module_form_possibility(char *module_form_str, int form, HyModuleForm module_form)
++{
++    enum {
++        NAME = 1,
++        STREAM = 2,
++        VERSION = 3,
++        CONTEXT = 4,
++        ARCH = 5,
++        PROFILE = 6
++    };
++
++    regex_t regex;
++    regmatch_t matches[10];
++    char *version = NULL;
++
++    regcomp(&regex, module_form_regex[form - 1], REG_EXTENDED);
++
++    if (regexec(&regex, module_form_str, 10, matches, 0) != 0) {
++        regfree(&regex);
++        return -1;
++    }
++
++    if (copy_str_from_subexpr(&(module_form->name), module_form_str, matches, NAME) == -1)
++        return -1;
++
++    if (!MATCH_EMPTY(VERSION)) {
++        copy_str_from_subexpr(&version, module_form_str, matches, VERSION);
++        module_form->version = atoi(version);
++        free(version);
++    }
++
++    copy_str_from_subexpr(&(module_form->stream), module_form_str, matches, STREAM);
++    copy_str_from_subexpr(&(module_form->context), module_form_str, matches, CONTEXT);
++    copy_str_from_subexpr(&(module_form->arch), module_form_str, matches, ARCH);
++    copy_str_from_subexpr(&(module_form->profile), module_form_str, matches, PROFILE);
++
++    regfree(&regex);
++    return 0;
++}
++
+ #undef MATCH_EMPTY
+diff --git a/libdnf/hy-subject-private.h b/libdnf/hy-subject-private.h
+index 993212e..8c9a474 100644
+--- a/libdnf/hy-subject-private.h
++++ b/libdnf/hy-subject-private.h
+@@ -24,6 +24,7 @@
+ #define HY_SUBJECT_INTERNAL_H
+ 
+ enum poss_type {
++    TYPE_MODULE_FORM,
+     TYPE_NEVRA,
+     TYPE_RELDEP_NEW,
+     TYPE_RELDEP_END
+@@ -32,5 +33,6 @@ enum poss_type {
+ extern const char *nevra_form_regex[];
+ 
+ int nevra_possibility(char *nevra_str, int re, HyNevra nevra);
++int module_form_possibility(char *module_form_str, int re, HyModuleForm module_form);
+ 
+ #endif
+diff --git a/libdnf/hy-subject.c b/libdnf/hy-subject.c
+index 40be633..c61c6ad 100644
+--- a/libdnf/hy-subject.c
++++ b/libdnf/hy-subject.c
+@@ -26,8 +26,10 @@
+ #include "hy-subject.h"
+ #include "hy-subject-private.h"
+ #include "hy-nevra.h"
++#include "hy-module-form.h"
+ #include "hy-iutil.h"
+ #include "hy-nevra-private.h"
++#include "hy-module-form-private.h"
+ #include "hy-types.h"
+ #include "hy-query.h"
+ #include "hy-selector.h"
+@@ -36,6 +38,25 @@
+ const HyForm HY_FORMS_MOST_SPEC[] = {
+     HY_FORM_NEVRA, HY_FORM_NA, HY_FORM_NAME, HY_FORM_NEVR, HY_FORM_NEV, _HY_FORM_STOP_ };
+ 
++const HyModuleFormE HY_MODULE_FORMS_MOST_SPEC[] = {
++        HY_MODULE_FORM_NSVCAP,
++        HY_MODULE_FORM_NSVCA,
++        HY_MODULE_FORM_NSVAP,
++        HY_MODULE_FORM_NSVA,
++        HY_MODULE_FORM_NSAP,
++        HY_MODULE_FORM_NSA,
++        HY_MODULE_FORM_NSVCP,
++        HY_MODULE_FORM_NSVP,
++        HY_MODULE_FORM_NSVC,
++        HY_MODULE_FORM_NSV,
++        HY_MODULE_FORM_NSP,
++        HY_MODULE_FORM_NS,
++        HY_MODULE_FORM_NAP,
++        HY_MODULE_FORM_NA,
++        HY_MODULE_FORM_NP,
++        HY_MODULE_FORM_N,
++        _HY_MODULE_FORM_STOP_};
++
+ static inline int
+ is_glob_pattern(char *str)
+ {
+@@ -50,18 +71,15 @@ is_glob_pattern(char *str)
+ }
+ 
+ static inline int
+-is_real_name(HyNevra nevra, DnfSack *sack, int flags)
++is_real_name(char* name, char* version, DnfSack *sack, int flags)
+ {
+     flags |= HY_NAME_ONLY;
+-    int glob_version = (flags & HY_GLOB) && is_glob_pattern(nevra->version);
+-    char *version = nevra->version;
+-    if (nevra->name == NULL && !glob_version)
++    int glob_version = (flags & HY_GLOB) && is_glob_pattern(version);
++    if (name == NULL && !glob_version)
+         return 1;
+-    if (glob_version)
+-        version = NULL;
+-    if (!is_glob_pattern(nevra->name))
++    if (!is_glob_pattern(name))
+         flags &= ~HY_GLOB;
+-    if (dnf_sack_knows(sack, nevra->name, version, flags) == 0)
++    if (dnf_sack_knows(sack, name, glob_version ? NULL : version, flags) == 0)
+         return 0;
+     return 1;
+ }
+@@ -80,17 +98,17 @@ arch_exist(char *arch, const char *existing_arch, int is_glob)
+ }
+ 
+ static inline int
+-is_real_arch(HyNevra nevra, DnfSack *sack, int flags)
++is_real_arch(char* arch, DnfSack *sack, int flags)
+ {
+-    int check_glob = (flags & HY_GLOB) && is_glob_pattern(nevra->arch);
+-    if (nevra->arch == NULL)
++    int check_glob = (flags & HY_GLOB) && is_glob_pattern(arch);
++    if (arch == NULL)
+         return 1;
+-    if (arch_exist(nevra->arch, "src", check_glob))
++    if (arch_exist(arch, "src", check_glob))
+         return 1;
+     const char **existing_arches = dnf_sack_list_arches(sack);
+     int ret = 0;
+     for (int i = 0; existing_arches[i] != NULL; ++i) {
+-        if ((ret = arch_exist(nevra->arch, existing_arches[i], check_glob)))
++        if ((ret = arch_exist(arch, existing_arches[i], check_glob)))
+             break;
+     }
+     g_free(existing_arches);
+@@ -100,8 +118,15 @@ is_real_arch(HyNevra nevra, DnfSack *sack, int flags)
+ static inline int
+ filter_real(HyNevra nevra, DnfSack *sack, int flags)
+ {
+-    return is_real_name(nevra, sack, flags) &&
+-        is_real_arch(nevra, sack, flags);
++    return is_real_name(nevra->name, nevra->version, sack, flags) &&
++        is_real_arch(nevra->arch, sack, flags);
++}
++
++static inline int
++mod_filter_real(HyModuleForm module_form, DnfSack *sack, int flags)
++{
++    return is_real_name(module_form->name, NULL, sack, flags) &&
++           is_real_arch(module_form->arch, sack, flags);
+ }
+ 
+ HySubject
+@@ -121,6 +146,7 @@ hy_possibilities_free(HyPossibilities iter)
+ {
+     g_free(iter->subject);
+     g_free(iter->forms);
++    g_free(iter->module_forms);
+     g_free(iter);
+ }
+ 
+@@ -141,17 +167,35 @@ forms_dup(const HyForm *forms)
+     return res;
+ }
+ 
++static HyModuleFormE *
++module_forms_dup(const HyModuleFormE *forms)
++{
++    if (forms == NULL)
++        return NULL;
++    HyModuleFormE *res = NULL;
++    const int BLOCK_SIZE = 17;
++    HyModuleFormE form;
++    int i = 0;
++    do {
++        res = solv_extend(res, i, 1, sizeof(HyModuleFormE), BLOCK_SIZE);
++        form = forms[i];
++        res[i++] = form;
++    } while (form != _HY_MODULE_FORM_STOP_);
++    return res;
++}
++
+ static HyPossibilities
+-possibilities_create(HySubject subject, const HyForm *forms, DnfSack *sack, int flags,
+-    enum poss_type type)
++possibilities_create(HySubject subject, const HyForm *forms, const HyModuleFormE *module_forms, DnfSack *sack,
++                     int flags, enum poss_type type)
+ {
+     HyPossibilities poss = g_malloc0(sizeof(*poss));
+     poss->subject = hy_subject_create(subject);
+     poss->forms = forms_dup(forms);
++    poss->module_forms = module_forms_dup(module_forms);
+     poss->sack = sack;
+     poss->flags = flags;
+     poss->type = type;
+-    if (forms == NULL)
++    if (forms == NULL && module_forms == NULL)
+         poss->current = -1;
+     else
+         poss->current = 0;
+@@ -161,7 +205,7 @@ possibilities_create(HySubject subject, const HyForm *forms, DnfSack *sack, int
+ HyPossibilities
+ hy_subject_reldep_possibilities_real(HySubject subject, DnfSack *sack, int flags)
+ {
+-    return possibilities_create(subject, NULL, sack, flags, TYPE_RELDEP_NEW);
++    return possibilities_create(subject, NULL, NULL, sack, flags, TYPE_RELDEP_NEW);
+ }
+ 
+ int hy_possibilities_next_reldep(HyPossibilities iter, DnfReldep **out_reldep)
+@@ -188,7 +232,7 @@ HyPossibilities
+ hy_subject_nevra_possibilities(HySubject subject, HyForm *forms)
+ {
+     const HyForm *default_forms = forms == NULL ? HY_FORMS_MOST_SPEC : forms;
+-    return possibilities_create(subject, default_forms, NULL, 0, TYPE_NEVRA);
++    return possibilities_create(subject, default_forms, NULL, NULL, 0, TYPE_NEVRA);
+ }
+ 
+ HyPossibilities
+@@ -196,7 +240,14 @@ hy_subject_nevra_possibilities_real(HySubject subject, HyForm *forms,
+     DnfSack *sack, int flags)
+ {
+     const HyForm *default_forms = forms == NULL ? HY_FORMS_MOST_SPEC : forms;
+-    return possibilities_create(subject, default_forms, sack, flags, TYPE_NEVRA);
++    return possibilities_create(subject, default_forms, NULL, sack, flags, TYPE_NEVRA);
++}
++
++HyPossibilities
++hy_subject_module_form_possibilities(HySubject subject, HyModuleFormE *forms)
++{
++    const HyModuleFormE *default_forms = forms == NULL ? HY_MODULE_FORMS_MOST_SPEC : forms;
++    return possibilities_create(subject, NULL, default_forms, NULL, 0, TYPE_MODULE_FORM);
+ }
+ 
+ int
+@@ -220,6 +271,27 @@ hy_possibilities_next_nevra(HyPossibilities iter, HyNevra *out_nevra)
+     return -1;
+ }
+ 
++int
++hy_possibilities_next_module_form(HyPossibilities iter, HyModuleForm *out_module_form)
++{
++    if (iter->type != TYPE_MODULE_FORM || iter->current == -1)
++        return -1;
++    HyModuleFormE form = iter->module_forms[iter->current];
++    while (form != _HY_MODULE_FORM_STOP_) {
++        iter->current++;
++        *out_module_form = hy_module_form_create();
++        if (module_form_possibility(iter->subject, form, *out_module_form) == 0) {
++            if (iter->sack == NULL)
++                return 0;
++            if (mod_filter_real(*out_module_form, iter->sack, iter->flags))
++                return 0;
++        }
++        form = iter->module_forms[iter->current];
++        g_clear_pointer(out_module_form, hy_module_form_free);
++    }
++    return -1;
++}
++
+ struct NevraToQuery {
+     int nevra_type;
+     int query_type;
+diff --git a/libdnf/hy-subject.h b/libdnf/hy-subject.h
+index 68d524d..e6d7623 100644
+--- a/libdnf/hy-subject.h
++++ b/libdnf/hy-subject.h
+@@ -26,6 +26,7 @@
+ #include "dnf-types.h"
+ #include "hy-types.h"
+ #include "hy-nevra.h"
++#include "hy-module-form.h"
+ 
+ #include <glib.h>
+ 
+@@ -44,16 +45,42 @@ enum _HyForm {
+     _HY_FORM_STOP_ = -1
+ };
+ 
++#ifdef __cplusplus
++enum _HyModuleFormE :short {
++#else
++enum _HyModuleFormE {
++#endif
++    HY_MODULE_FORM_NSVCAP = 1,
++    HY_MODULE_FORM_NSVCA = 2,
++    HY_MODULE_FORM_NSVAP = 3,
++    HY_MODULE_FORM_NSVA = 4,
++    HY_MODULE_FORM_NSAP = 5,
++    HY_MODULE_FORM_NSA = 6,
++    HY_MODULE_FORM_NSVCP = 7,
++    HY_MODULE_FORM_NSVP = 8,
++    HY_MODULE_FORM_NSVC = 9,
++    HY_MODULE_FORM_NSV = 10,
++    HY_MODULE_FORM_NSP = 11,
++    HY_MODULE_FORM_NS = 12,
++    HY_MODULE_FORM_NAP = 13,
++    HY_MODULE_FORM_NA = 14,
++    HY_MODULE_FORM_NP = 15,
++    HY_MODULE_FORM_N = 16,
++    _HY_MODULE_FORM_STOP_ = -1
++};
++
+ struct _HyPossibilities {
+     HySubject subject;
+     DnfSack *sack;
+     int flags;
+     HyForm *forms;
++    HyModuleFormE *module_forms;
+     int current;
+     int type;
+ };
+ 
+ extern const HyForm HY_FORMS_MOST_SPEC[];
++extern const HyModuleFormE HY_MODULE_FORMS_MOST_SPEC[];
+ 
+ HySubject hy_subject_create(const char * pattern);
+ void hy_subject_free(HySubject subject);
+@@ -65,7 +92,10 @@ HyPossibilities hy_subject_nevra_possibilities(HySubject subject,
+     HyForm *forms);
+ HyPossibilities hy_subject_nevra_possibilities_real(HySubject subject,
+     HyForm *forms, DnfSack *sack, int flags);
++HyPossibilities hy_subject_module_form_possibilities(HySubject subject,
++                                                     HyModuleFormE *forms);
+ int hy_possibilities_next_nevra(HyPossibilities iter, HyNevra *out_nevra);
++int hy_possibilities_next_module_form(HyPossibilities iter, HyModuleForm *out_module_form);
+ 
+ HyQuery hy_subject_get_best_query(HySubject subject, DnfSack *sack, gboolean with_provides);
+ HySelector hy_subject_get_best_selector(HySubject subject, DnfSack *sack);
+diff --git a/libdnf/hy-types.h b/libdnf/hy-types.h
+index 88d37c5..f98db84 100644
+--- a/libdnf/hy-types.h
++++ b/libdnf/hy-types.h
+@@ -31,9 +31,16 @@ enum _HyForm :short ;
+ typedef enum _HyForm HyForm;
+ #endif
+ 
++#ifdef __cplusplus
++enum _HyModuleFormE :short ;
++#else
++typedef enum _HyModuleFormE HyModuleFormE;
++#endif
++
+ typedef struct _HyRepo * HyRepo;
+ typedef struct _HyGoal * HyGoal;
+ typedef struct _HyNevra * HyNevra;
++typedef struct _HyModuleForm * HyModuleForm;
+ typedef struct _HyPossibilities * HyPossibilities;
+ typedef struct _HyQuery * HyQuery;
+ typedef struct _HySelector * HySelector;
+diff --git a/python/hawkey/CMakeLists.txt b/python/hawkey/CMakeLists.txt
+index 86f100a..771e4e0 100644
+--- a/python/hawkey/CMakeLists.txt
++++ b/python/hawkey/CMakeLists.txt
+@@ -32,6 +32,7 @@ SET (hawkeymodule_SRCS
+     hawkeymodule.c
+     iutil-py.c
+     nevra-py.c
++    module-form-py.c
+     package-py.c
+     packagedelta-py.c
+     possibilities-py.c
+diff --git a/python/hawkey/__init__.py b/python/hawkey/__init__.py
+index 0074687..c08c144 100644
+--- a/python/hawkey/__init__.py
++++ b/python/hawkey/__init__.py
+@@ -35,14 +35,18 @@ __all__ = [
+     'CHKSUM_MD5', 'CHKSUM_SHA1', 'CHKSUM_SHA256', 'CHKSUM_SHA512', 'ICASE',
+     'CMDLINE_REPO_NAME', 'SYSTEM_REPO_NAME', 'REASON_DEP', 'REASON_USER',
+     'REASON_CLEAN', 'REASON_WEAKDEP', 'FORM_NEVRA', 'FORM_NEVR', 'FORM_NEV',
+-    'FORM_NA', 'FORM_NAME', 'FORM_ALL',
++    'FORM_NA', 'FORM_NAME', 'FORM_ALL', 'MODULE_FORM_NSVCAP', 'MODULE_FORM_NSVCA',
++    'MODULE_FORM_NSVAP', 'MODULE_FORM_NSVA', 'MODULE_FORM_NSAP', 'MODULE_FORM_NSA',
++    'MODULE_FORM_NSVCP', 'MODULE_FORM_NSVP', 'MODULE_FORM_NSVC', 'MODULE_FORM_NSV',
++    'MODULE_FORM_NSP', 'MODULE_FORM_NS', 'MODULE_FORM_NAP', 'MODULE_FORM_NA',
++    'MODULE_FORM_NP', 'MODULE_FORM_N'
+     # exceptions
+     'ArchException', 'Exception', 'QueryException', 'RuntimeException',
+     'ValueException',
+     # functions
+     'chksum_name', 'chksum_type', 'split_nevra',
+     # classes
+-    'Goal', 'NEVRA', 'Package', 'Query', 'Repo', 'Sack', 'Selector', 'Subject']
++    'Goal', 'NEVRA', 'ModuleForm', 'Package', 'Query', 'Repo', 'Sack', 'Selector', 'Subject']
+ 
+ _QUERY_KEYNAME_MAP = {
+     'pkg': _hawkey.PKG,
+@@ -117,6 +121,23 @@ FORM_NEV = _hawkey.FORM_NEV
+ FORM_NA = _hawkey.FORM_NA
+ FORM_NAME = _hawkey.FORM_NAME
+ 
++MODULE_FORM_NSVCAP = _hawkey.MODULE_FORM_NSVCAP
++MODULE_FORM_NSVCA = _hawkey.MODULE_FORM_NSVCA
++MODULE_FORM_NSVAP = _hawkey.MODULE_FORM_NSVAP
++MODULE_FORM_NSVA = _hawkey.MODULE_FORM_NSVA
++MODULE_FORM_NSAP = _hawkey.MODULE_FORM_NSAP
++MODULE_FORM_NSA = _hawkey.MODULE_FORM_NSA
++MODULE_FORM_NSVCP = _hawkey.MODULE_FORM_NSVCP
++MODULE_FORM_NSVP = _hawkey.MODULE_FORM_NSVP
++MODULE_FORM_NSVC = _hawkey.MODULE_FORM_NSVC
++MODULE_FORM_NSV = _hawkey.MODULE_FORM_NSV
++MODULE_FORM_NSP = _hawkey.MODULE_FORM_NSP
++MODULE_FORM_NS = _hawkey.MODULE_FORM_NS
++MODULE_FORM_NAP = _hawkey.MODULE_FORM_NAP
++MODULE_FORM_NA = _hawkey.MODULE_FORM_NA
++MODULE_FORM_NP = _hawkey.MODULE_FORM_NP
++MODULE_FORM_N = _hawkey.MODULE_FORM_N
++
+ ICASE = _hawkey.ICASE
+ EQ = _hawkey.EQ
+ LT = _hawkey.LT
+@@ -201,6 +222,29 @@ class NEVRA(_hawkey.NEVRA):
+             not self.release and not self.arch
+ 
+ 
++class ModuleForm(_hawkey.ModuleForm):
++
++    MODULE_FORM_FIELDS = ["name", "stream", "version", "context", "arch", "profile"]
++
++    def _has_just_name(self):
++        return self.name and not self.stream and not self.version and \
++               not self.arch and not self.profile
++
++    def __repr__(self):
++        values = [getattr(self, i) for i in self.MODULE_FORM_FIELDS]
++        items = [(field, value) for field, value in zip(self.MODULE_FORM_FIELDS, values) if value is not None]
++        items_str = ", ".join(["{}={}".format(field, value) for field, value in items])
++        return "<MODULE_FORM: {}>".format(items_str)
++
++    def __eq__(self, other):
++        result = True
++        for field in self.MODULE_FORM_FIELDS:
++            value_self = getattr(self, field)
++            value_other = getattr(other, field)
++            result &= value_self == value_other
++        return result
++
++
+ class Goal(_hawkey.Goal):
+     _reserved_kw = set(['package', 'select'])
+     _flag_kw = set(['clean_deps', 'check_installed'])
+@@ -395,3 +439,8 @@ class Subject(_hawkey.Subject):
+         poss = super(Subject, self).nevra_possibilities_real(*args, **kwargs)
+         for nevra in poss:
+             yield NEVRA(nevra=nevra)
++
++    def module_form_possibilities(self, *args, **kwargs):
++        poss = super(Subject, self).module_form_possibilities(*args, **kwargs)
++        for module_form in poss:
++            yield ModuleForm(module_form=module_form)
+diff --git a/python/hawkey/hawkeymodule.c b/python/hawkey/hawkeymodule.c
+index b8f7341..c91d4cd 100644
+--- a/python/hawkey/hawkeymodule.c
++++ b/python/hawkey/hawkeymodule.c
+@@ -40,6 +40,7 @@
+ #include "exception-py.h"
+ #include "goal-py.h"
+ #include "nevra-py.h"
++#include "module-form-py.h"
+ #include "package-py.h"
+ #include "packagedelta-py.h"
+ #include "possibilities-py.h"
+@@ -214,6 +215,11 @@ PYCOMP_MOD_INIT(_hawkey)
+         return PYCOMP_MOD_ERROR_VAL;
+     Py_INCREF(&nevra_Type);
+     PyModule_AddObject(m, "NEVRA", (PyObject *)&nevra_Type);
++    /* _hawkey.ModuleForm */
++    if (PyType_Ready(&module_form_Type) < 0)
++        return PYCOMP_MOD_ERROR_VAL;
++    Py_INCREF(&module_form_Type);
++    PyModule_AddObject(m, "ModuleForm", (PyObject *)&module_form_Type);
+     /* _hawkey.Solution */
+     if (PyType_Ready(&solution_Type) < 0)
+         return PYCOMP_MOD_ERROR_VAL;
+@@ -236,6 +242,23 @@ PYCOMP_MOD_INIT(_hawkey)
+     PyModule_AddIntConstant(m, "FORM_NA", HY_FORM_NA);
+     PyModule_AddIntConstant(m, "FORM_NAME", HY_FORM_NAME);
+ 
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSVCAP", HY_MODULE_FORM_NSVCAP);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSVCA", HY_MODULE_FORM_NSVCA);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSVAP", HY_MODULE_FORM_NSVAP);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSVA", HY_MODULE_FORM_NSVA);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSAP", HY_MODULE_FORM_NSAP);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSA", HY_MODULE_FORM_NSA);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSVCP", HY_MODULE_FORM_NSVCP);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSVP", HY_MODULE_FORM_NSVP);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSVC", HY_MODULE_FORM_NSVC);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSV", HY_MODULE_FORM_NSV);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NSP", HY_MODULE_FORM_NSP);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NS", HY_MODULE_FORM_NS);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NAP", HY_MODULE_FORM_NAP);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NA", HY_MODULE_FORM_NA);
++    PyModule_AddIntConstant(m, "MODULE_FORM_NP", HY_MODULE_FORM_NP);
++    PyModule_AddIntConstant(m, "MODULE_FORM_N", HY_MODULE_FORM_N);
++
+     PyModule_AddIntConstant(m, "VERSION_MAJOR", LIBDNF_MAJOR_VERSION);
+     PyModule_AddIntConstant(m, "VERSION_MINOR", LIBDNF_MINOR_VERSION);
+     PyModule_AddIntConstant(m, "VERSION_PATCH", LIBDNF_MICRO_VERSION);
+diff --git a/python/hawkey/module-form-py.c b/python/hawkey/module-form-py.c
+new file mode 100644
+index 0000000..99ce8ef
+--- /dev/null
++++ b/python/hawkey/module-form-py.c
+@@ -0,0 +1,252 @@
++/*
++ * Copyright (C) 2017 Red Hat, Inc.
++ *
++ * Licensed under the GNU Lesser General Public License Version 2.1
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include <Python.h>
++
++// libsolv
++#include <solv/util.h>
++
++// hawkey
++#include "hy-module-form.h"
++#include "hy-module-form-private.h"
++#include "dnf-sack.h"
++#include "hy-types.h"
++
++// pyhawkey
++#include "module-form-py.h"
++#include "pycomp.h"
++
++typedef struct {
++    PyObject_HEAD
++    HyModuleForm module_form;
++} _ModuleFormObject;
++
++HyModuleForm
++moduleFormFromPyObject(PyObject *o)
++{
++    if (!PyObject_TypeCheck(o, &module_form_Type)) {
++        PyErr_SetString(PyExc_TypeError, "Expected a _hawkey.ModuleForm object.");
++        return NULL;
++    }
++    return ((_ModuleFormObject *)o)->module_form;
++}
++
++PyObject *
++moduleFormToPyObject(HyModuleForm module_form)
++{
++    _ModuleFormObject *self = (_ModuleFormObject *)module_form_Type.tp_alloc(&module_form_Type, 0);
++    if (self)
++        self->module_form = module_form;
++    return (PyObject *)self;
++}
++
++// getsetters
++static int
++set_version(_ModuleFormObject *self, PyObject *value, void *closure)
++{
++    if (PyInt_Check(value))
++        self->module_form->version = PyLong_AsLong(value);
++    else if (value == Py_None)
++        self->module_form->version = -1;
++    else
++        return -1;
++    return 0;
++}
++
++static PyObject *
++get_version(_ModuleFormObject *self, void *closure)
++{
++    if (self->module_form->version == -1L)
++        Py_RETURN_NONE;
++#if PY_MAJOR_VERSION >= 3
++    return PyLong_FromLong(self->module_form->version);
++#else
++    return PyInt_FromLong(self->module_form->version);
++#endif
++}
++
++static PyObject *
++get_attr(_ModuleFormObject *self, void *closure)
++{
++    intptr_t str_key = (intptr_t)closure;
++    const char *str;
++
++    str = hy_module_form_get_string(self->module_form, str_key);
++    if (str == NULL)
++        Py_RETURN_NONE;
++    else
++        return PyString_FromString(str);
++}
++
++static int
++set_attr(_ModuleFormObject *self, PyObject *value, void *closure)
++{
++    intptr_t str_key = (intptr_t)closure;
++    PyObject *tmp_py_str = NULL;
++    const char *str_value = pycomp_get_string(value, &tmp_py_str);
++
++    if (str_value == NULL) {
++        Py_XDECREF(tmp_py_str);
++        return -1;
++    }
++    hy_module_form_set_string(self->module_form, str_key, str_value);
++    Py_XDECREF(tmp_py_str);
++
++    return 0;
++}
++
++static PyGetSetDef module_form_getsetters[] = {
++        {(char*)"name", (getter)get_attr, (setter)set_attr, NULL,
++                (void *)HY_MODULE_FORM_NAME},
++        {(char*)"stream", (getter)get_attr, (setter)set_attr, NULL,
++                (void *)HY_MODULE_FORM_STREAM},
++        {(char*)"version", (getter)get_version, (setter)set_version, NULL,
++                NULL},
++        {(char*)"context", (getter)get_attr, (setter)set_attr, NULL,
++                (void *)HY_MODULE_FORM_CONTEXT},
++        {(char*)"arch", (getter)get_attr, (setter)set_attr, NULL,
++                (void *)HY_MODULE_FORM_ARCH},
++        {(char*)"profile", (getter)get_attr, (setter)set_attr, NULL,
++                (void *)HY_MODULE_FORM_PROFILE},
++        {NULL}          /* sentinel */
++};
++
++static PyObject *
++module_form_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
++{
++    _ModuleFormObject *self = (_ModuleFormObject*)type->tp_alloc(type, 0);
++    if (self) {
++        self->module_form = hy_module_form_create();
++    }
++    return (PyObject*)self;
++}
++
++static void
++module_form_dealloc(_ModuleFormObject *self)
++{
++    hy_module_form_free(self->module_form);
++    Py_TYPE(self)->tp_free(self);
++}
++
++static int
++module_form_init(_ModuleFormObject *self, PyObject *args, PyObject *kwds)
++{
++    char *name = NULL, *stream = NULL, *context = NULL, *arch = NULL, *profile = NULL;
++    PyObject *version_o = NULL;
++    HyModuleForm cmodule_form = NULL;
++
++    const char *kwlist[] = {"name", "stream", "version", "context", "arch", "profile",
++                            "module_form", NULL};
++
++    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|zzOzzzO&", (char**) kwlist,
++                                     &name, &stream, &version_o, &context, &arch, &profile, module_form_converter,
++                                     &cmodule_form))
++        return -1;
++    if (name == NULL && cmodule_form == NULL) {
++        PyErr_SetString(PyExc_ValueError, "Name is required parameter.");
++        return -1;
++    }
++    if (cmodule_form != NULL) {
++        self->module_form = hy_module_form_clone(cmodule_form);
++        return 0;
++    }
++    if (set_version(self, version_o, NULL) == -1) {
++        PyErr_SetString(PyExc_TypeError, "An integer value or None expected for version.");
++        return -1;
++    }
++    hy_module_form_set_string(self->module_form, HY_MODULE_FORM_NAME, name);
++    hy_module_form_set_string(self->module_form, HY_MODULE_FORM_STREAM, stream);
++    hy_module_form_set_string(self->module_form, HY_MODULE_FORM_CONTEXT, context);
++    hy_module_form_set_string(self->module_form, HY_MODULE_FORM_ARCH, arch);
++    hy_module_form_set_string(self->module_form, HY_MODULE_FORM_PROFILE, profile);
++    return 0;
++}
++
++/* object methods */
++
++int
++module_form_converter(PyObject *o, HyModuleForm *module_form_ptr)
++{
++    HyModuleForm module_form = moduleFormFromPyObject(o);
++    if (module_form == NULL)
++        return 0;
++    *module_form_ptr = module_form;
++    return 1;
++}
++
++static PyObject *
++iter(_ModuleFormObject *self)
++{
++    PyObject *res;
++    HyModuleForm module_form = self->module_form;
++    if (self->module_form->version == -1) {
++        Py_INCREF(Py_None);
++        res = Py_BuildValue("zzOzzz", module_form->name, module_form->stream, Py_None,
++                            module_form->context, module_form->arch, module_form->profile);
++    } else
++        res = Py_BuildValue("zzizzz", module_form->name, module_form->stream, module_form->version,
++                            module_form->context, module_form->arch, module_form->profile);
++    PyObject *iter = PyObject_GetIter(res);
++    Py_DECREF(res);
++    return iter;
++}
++
++PyTypeObject module_form_Type = {
++        PyVarObject_HEAD_INIT(NULL, 0)
++        "_hawkey.ModuleForm",        /*tp_name*/
++        sizeof(_ModuleFormObject),   /*tp_basicsize*/
++        0,              /*tp_itemsize*/
++        (destructor) module_form_dealloc,  /*tp_dealloc*/
++        0,              /*tp_print*/
++        0,              /*tp_getattr*/
++        0,              /*tp_setattr*/
++        0,              /*tp_compare*/
++        0,              /*tp_repr*/
++        0,              /*tp_as_number*/
++        0,              /*tp_as_sequence*/
++        0,              /*tp_as_mapping*/
++        0,              /*tp_hash */
++        0,              /*tp_call*/
++        0,              /*tp_str*/
++        0,              /*tp_getattro*/
++        0,              /*tp_setattro*/
++        0,              /*tp_as_buffer*/
++        Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,     /*tp_flags*/
++        "ModuleForm object",     /* tp_doc */
++        0,              /* tp_traverse */
++        0,              /* tp_clear */
++        0,              /* tp_richcompare */
++        0,              /* tp_weaklistoffset */
++        (getiterfunc) iter,/* tp_iter */
++        0,              /* tp_iternext */
++        0,              /* tp_methods */
++        0,              /* tp_members */
++        module_form_getsetters,       /* tp_getset */
++        0,              /* tp_base */
++        0,              /* tp_dict */
++        0,              /* tp_descr_get */
++        0,              /* tp_descr_set */
++        0,              /* tp_dictoffset */
++        (initproc) module_form_init,   /* tp_init */
++        0,              /* tp_alloc */
++        module_form_new,          /* tp_new */
++        0,              /* tp_free */
++        0,              /* tp_is_gc */
++};
+diff --git a/python/hawkey/module-form-py.h b/python/hawkey/module-form-py.h
+new file mode 100644
+index 0000000..b56613f
+--- /dev/null
++++ b/python/hawkey/module-form-py.h
+@@ -0,0 +1,32 @@
++/*
++ * Copyright (C) 2017 Red Hat, Inc.
++ *
++ * Licensed under the GNU Lesser General Public License Version 2.1
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.`
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#ifndef LIBDNF_MODULE_FORM_PY_H
++#define LIBDNF_MODULE_FORM_PY_H
++
++#include "hy-module-form.h"
++
++extern PyTypeObject module_form_Type;
++
++HyModuleForm moduleFormFromPyObject(PyObject *o);
++PyObject *moduleFormToPyObject(HyModuleForm module_form);
++int module_form_converter(PyObject *o, HyModuleForm *module_form_ptr);
++
++#endif //LIBDNF_MODULE_FORM_PY_H
+diff --git a/python/hawkey/possibilities-py.c b/python/hawkey/possibilities-py.c
+index e25c0e3..92a98db 100644
+--- a/python/hawkey/possibilities-py.c
++++ b/python/hawkey/possibilities-py.c
+@@ -25,6 +25,7 @@
+ 
+ // pyhawkey
+ #include "nevra-py.h"
++#include "module-form-py.h"
+ #include "possibilities-py.h"
+ #include "pycomp.h"
+ #include "reldep-py.h"
+@@ -75,6 +76,10 @@ static PyObject* possibilities_next(_PossibilitiesObject *self)
+         HyNevra nevra;
+         if (hy_possibilities_next_nevra(iter, &nevra) == 0)
+             return nevraToPyObject(nevra);
++    } else if (iter->type == TYPE_MODULE_FORM) {
++        HyModuleForm module_form;
++        if (hy_possibilities_next_module_form(iter, &module_form) == 0)
++            return moduleFormToPyObject(module_form);
+     } else {
+         DnfReldep *reldep;
+         if (hy_possibilities_next_reldep(iter, &reldep) == 0)
+diff --git a/python/hawkey/subject-py.c b/python/hawkey/subject-py.c
+index 99c9ae3..42f1f3f 100644
+--- a/python/hawkey/subject-py.c
++++ b/python/hawkey/subject-py.c
+@@ -109,6 +109,26 @@ forms_from_list(PyObject *list)
+     return forms;
+ }
+ 
++static HyModuleFormE *
++module_forms_from_list(PyObject *list)
++{
++    HyModuleFormE *forms = NULL;
++    int i = 0;
++    const int BLOCK_SIZE = 17;
++    while (i < PyList_Size(list)) {
++        PyObject *form = PyList_GetItem(list, i);
++        if (!PyInt_Check(form)) {
++            g_free(forms);
++            return NULL;
++        }
++        forms = solv_extend(forms, i, 1, sizeof(HyModuleFormE), BLOCK_SIZE);
++        forms[i++] = PyLong_AsLong(form);
++    }
++    forms = solv_extend(forms, i, 1, sizeof(HyModuleFormE), BLOCK_SIZE);
++    forms[i] = _HY_MODULE_FORM_STOP_;
++    return forms;
++}
++
+ static HyForm *
+ forms_from_int(PyObject *num)
+ {
+@@ -118,6 +138,15 @@ forms_from_int(PyObject *num)
+     return forms;
+ }
+ 
++static HyModuleFormE *
++module_forms_from_int(PyObject *num)
++{
++    HyModuleFormE *forms = g_new0(HyModuleFormE, 2);
++    forms[0] = PyLong_AsLong(num);
++    forms[1] = _HY_MODULE_FORM_STOP_;
++    return forms;
++}
++
+ static HyForm *
+ fill_form(PyObject *o)
+ {
+@@ -133,6 +162,21 @@ fill_form(PyObject *o)
+     return cforms;
+ }
+ 
++static HyModuleFormE *
++fill_module_form(PyObject *o)
++{
++    HyModuleFormE *cforms = NULL;
++    if (PyList_Check(o))
++        cforms = module_forms_from_list(o);
++    else if (PyInt_Check(o))
++        cforms = module_forms_from_int(o);
++    if (cforms == NULL) {
++        PyErr_SetString(PyExc_TypeError, "Malformed subject forms.");
++        return NULL;
++    }
++    return cforms;
++}
++
+ /* object methods */
+ 
+ static PyObject *
+@@ -188,6 +232,26 @@ nevra_possibilities_real(_SubjectObject *self, PyObject *args, PyObject *kwds)
+     return possibilitiesToPyObject(iter, sack);
+ }
+ 
++static PyObject *
++module_form_possibilities(_SubjectObject *self, PyObject *args, PyObject *kwds)
++{
++    PyObject *form = NULL;
++    const char *kwlist[] = { "form", NULL };
++    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", (char**) kwlist, &form)) {
++        return NULL;
++    }
++    HyModuleFormE *cforms = NULL;
++    if (form != NULL) {
++        cforms = fill_module_form(form);
++        if (cforms == NULL)
++            return NULL;
++    }
++    HyPossibilities iter = hy_subject_module_form_possibilities(self->pattern,
++                                                                cforms);
++    g_free(cforms);
++    return possibilitiesToPyObject(iter, NULL);
++}
++
+ static PyObject *
+ reldep_possibilities_real(_SubjectObject *self, PyObject *args, PyObject *kwds)
+ {
+@@ -215,6 +279,8 @@ static struct PyMethodDef subject_methods[] = {
+     METH_VARARGS | METH_KEYWORDS, NULL},
+     {"nevra_possibilities_real", (PyCFunction) nevra_possibilities_real,
+     METH_VARARGS | METH_KEYWORDS, NULL},
++    {"module_form_possibilities", (PyCFunction) module_form_possibilities,
++    METH_VARARGS | METH_KEYWORDS, NULL},
+     {"reldep_possibilities_real", (PyCFunction) reldep_possibilities_real,
+     METH_VARARGS | METH_KEYWORDS, NULL},
+     {NULL}                      /* sentinel */

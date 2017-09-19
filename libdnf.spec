@@ -22,11 +22,14 @@
 
 Name:           libdnf
 Version:        0.9.3
-Release:        6%{?dist}
+Release:        6%{?dist}.modularity.1
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch0:         0001-add-nsvcap-parsing-support.patch
+Patch1:         0002-add-tests-for-module-forms.patch
+Patch2:         0003-use-long-long-for-module_form-version-instead-of-int.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -92,7 +95,7 @@ Python 3 bindings for the hawkey library.
 %endif
 
 %prep
-%autosetup
+%autosetup -p1
 mkdir build-py2
 %if %{with python3}
 mkdir build-py3

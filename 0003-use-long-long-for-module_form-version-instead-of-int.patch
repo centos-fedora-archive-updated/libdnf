@@ -1,0 +1,97 @@
+From a441ad2f0a9ad9cc087a693dc468b8c9b53bfe03 Mon Sep 17 00:00:00 2001
+From: Martin Hatina <mhatina@redhat.com>
+Date: Wed, 30 Aug 2017 20:29:02 +0200
+Subject: [PATCH 3/3] use long long for module_form->version instead of int
+
+---
+ libdnf/hy-module-form-private.h | 2 +-
+ libdnf/hy-module-form.c         | 4 ++--
+ libdnf/hy-module-form.h         | 4 ++--
+ libdnf/hy-subject-private.c     | 2 +-
+ python/hawkey/module-form-py.c  | 4 ++--
+ 5 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/libdnf/hy-module-form-private.h b/libdnf/hy-module-form-private.h
+index a402f7d..8a154ca 100644
+--- a/libdnf/hy-module-form-private.h
++++ b/libdnf/hy-module-form-private.h
+@@ -24,7 +24,7 @@
+ struct _HyModuleForm {
+     char *name;
+     char *stream;
+-    int version;
++    long long version;
+     char *context;
+     char *arch;
+     char *profile;
+diff --git a/libdnf/hy-module-form.c b/libdnf/hy-module-form.c
+index 5bb0ff9..58b63e8 100644
+--- a/libdnf/hy-module-form.c
++++ b/libdnf/hy-module-form.c
+@@ -105,14 +105,14 @@ hy_module_form_set_string(HyModuleForm module_form, int which, const char* str_v
+     *attr = g_strdup(str_val);
+ }
+ 
+-int
++long long
+ hy_module_form_get_version(HyModuleForm module_form)
+ {
+     return module_form->version;
+ }
+ 
+ void
+-hy_module_form_set_version(HyModuleForm module_form, int version)
++hy_module_form_set_version(HyModuleForm module_form, long long version)
+ {
+     module_form->version = version;
+ }
+diff --git a/libdnf/hy-module-form.h b/libdnf/hy-module-form.h
+index 3a11aa9..b77ba86 100644
+--- a/libdnf/hy-module-form.h
++++ b/libdnf/hy-module-form.h
+@@ -41,8 +41,8 @@ HyModuleForm hy_module_form_create(void);
+ void hy_module_form_free(HyModuleForm module_form);
+ HyModuleForm hy_module_form_clone(HyModuleForm module_form);
+ const char *hy_module_form_get_string(HyModuleForm module_form, int which);
+-int hy_module_form_get_version(HyModuleForm module_form);
+-void hy_module_form_set_version(HyModuleForm module_form, int epoch);
++long long hy_module_form_get_version(HyModuleForm module_form);
++void hy_module_form_set_version(HyModuleForm module_form, long long version);
+ void hy_module_form_set_string(HyModuleForm module_form, int which, const char* str_val);
+ 
+ G_END_DECLS
+diff --git a/libdnf/hy-subject-private.c b/libdnf/hy-subject-private.c
+index df9cae8..f4171d8 100644
+--- a/libdnf/hy-subject-private.c
++++ b/libdnf/hy-subject-private.c
+@@ -118,7 +118,7 @@ int module_form_possibility(char *module_form_str, int form, HyModuleForm module
+ 
+     if (!MATCH_EMPTY(VERSION)) {
+         copy_str_from_subexpr(&version, module_form_str, matches, VERSION);
+-        module_form->version = atoi(version);
++        module_form->version = atoll(version);
+         free(version);
+     }
+ 
+diff --git a/python/hawkey/module-form-py.c b/python/hawkey/module-form-py.c
+index 99ce8ef..d434b88 100644
+--- a/python/hawkey/module-form-py.c
++++ b/python/hawkey/module-form-py.c
+@@ -58,7 +58,7 @@ moduleFormToPyObject(HyModuleForm module_form)
+ }
+ 
+ // getsetters
+-static int
++static long long
+ set_version(_ModuleFormObject *self, PyObject *value, void *closure)
+ {
+     if (PyInt_Check(value))
+@@ -201,7 +201,7 @@ iter(_ModuleFormObject *self)
+         res = Py_BuildValue("zzOzzz", module_form->name, module_form->stream, Py_None,
+                             module_form->context, module_form->arch, module_form->profile);
+     } else
+-        res = Py_BuildValue("zzizzz", module_form->name, module_form->stream, module_form->version,
++        res = Py_BuildValue("zzLzzz", module_form->name, module_form->stream, module_form->version,
+                             module_form->context, module_form->arch, module_form->profile);
+     PyObject *iter = PyObject_GetIter(res);
+     Py_DECREF(res);

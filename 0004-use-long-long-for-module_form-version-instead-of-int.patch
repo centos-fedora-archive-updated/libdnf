@@ -1,7 +1,7 @@
-From a441ad2f0a9ad9cc087a693dc468b8c9b53bfe03 Mon Sep 17 00:00:00 2001
+From 6c8fea6ed2c12f786076420dae916da96fea3fa9 Mon Sep 17 00:00:00 2001
 From: Martin Hatina <mhatina@redhat.com>
 Date: Wed, 30 Aug 2017 20:29:02 +0200
-Subject: [PATCH 3/3] use long long for module_form->version instead of int
+Subject: [PATCH 4/4] use long long for module_form->version instead of int
 
 ---
  libdnf/hy-module-form-private.h | 2 +-
@@ -95,3 +95,6 @@ index 99ce8ef..d434b88 100644
                              module_form->context, module_form->arch, module_form->profile);
      PyObject *iter = PyObject_GetIter(res);
      Py_DECREF(res);
+-- 
+2.14.1
+

@@ -1,0 +1,625 @@
+From 8e5accccf8e5015cf87f589d0b8afb750cbf7a09 Mon Sep 17 00:00:00 2001
+From: Jaroslav Rohel <jrohel@redhat.com>
+Date: Thu, 17 Aug 2017 11:59:08 +0200
+Subject: [PATCH 1/4] Enablement for includepkgs option
+
+Added support for enable/disable includes per repository.
+Added functions for removing and reseting of includes and excludes.
+Added functions for getting includes and excludes.
+
+Expose all functions to Python.
+
+(cherry picked from commit a02664647bda14402b47416ce22c2b004a46193d)
+---
+ VERSION.cmake            |   2 +-
+ libdnf.spec              |   2 +-
+ libdnf/dnf-sack.c        | 263 ++++++++++++++++++++++++++++++++++++++++-------
+ libdnf/dnf-sack.h        |  14 +++
+ libdnf/hy-repo-private.h |   1 +
+ libdnf/hy-repo.c         |  12 +++
+ libdnf/hy-repo.h         |   2 +
+ python/hawkey/sack-py.c  | 147 ++++++++++++++++++++++++++
+ 8 files changed, 402 insertions(+), 41 deletions(-)
+
+diff --git a/VERSION.cmake b/VERSION.cmake
+index f6e00e3..286c29c 100644
+--- a/VERSION.cmake
++++ b/VERSION.cmake
+@@ -1,4 +1,4 @@
+ set (LIBDNF_MAJOR_VERSION 0)
+ set (LIBDNF_MINOR_VERSION 9)
+-set (LIBDNF_MICRO_VERSION 3)
++set (LIBDNF_MICRO_VERSION 4)
+ set (LIBDNF_VERSION ${LIBDNF_MAJOR_VERSION}.${LIBDNF_MINOR_VERSION}.${LIBDNF_MICRO_VERSION})
+diff --git a/libdnf.spec b/libdnf.spec
+index 71af7bb..2e7e09d 100644
+--- a/libdnf.spec
++++ b/libdnf.spec
+@@ -21,7 +21,7 @@
+     %{nil}
+ 
+ Name:           libdnf
+-Version:        0.9.3
++Version:        0.9.4
+ Release:        1%{?dist}
+ Summary:        Library providing simplified C and Python API to libsolv
+ License:        LGPLv2+
+diff --git a/libdnf/dnf-sack.c b/libdnf/dnf-sack.c
+index 0c6e95c..086293d 100644
+--- a/libdnf/dnf-sack.c
++++ b/libdnf/dnf-sack.c
+@@ -282,21 +282,40 @@ dnf_sack_recompute_considered(DnfSack *sack)
+     if (priv->considered_uptodate)
+         return;
+     if (!pool->considered) {
+-        if (!priv->repo_excludes && !priv->pkg_excludes)
++        if (!priv->repo_excludes && !priv->pkg_excludes && !priv->pkg_includes)
+             return;
+         pool->considered = g_malloc0(sizeof(Map));
+         map_init(pool->considered, pool->nsolvables);
+     } else
+         map_grow(pool->considered, pool->nsolvables);
+ 
+-    // considered = (all - repo_excludes - pkg_excludes) and pkg_includes
++    // considered = (all - repo_excludes - pkg_excludes) and
++    //              (pkg_includes + all_from_repos_not_using_includes)
+     map_setall(pool->considered);
+     if (priv->repo_excludes)
+         map_subtract(pool->considered, priv->repo_excludes);
+     if (priv->pkg_excludes)
+         map_subtract(pool->considered, priv->pkg_excludes);
+-    if (priv->pkg_includes)
+-        map_and(pool->considered, priv->pkg_includes);
++    if (priv->pkg_includes) {
++        Map pkg_includes_tmp;
++        map_init_clone(&pkg_includes_tmp, priv->pkg_includes);
++
++        // Add all solvables from repositories which do not use "includes"
++        Id repoid;
++        Repo *repo;
++        FOR_REPOS(repoid, repo) {
++            HyRepo hyrepo = repo->appdata;
++            if (!hy_repo_get_use_includes(hyrepo)) {
++                Id solvableid;
++                Solvable *solvable;
++                FOR_REPO_SOLVABLES(repo, solvableid, solvable)
++                    MAPSET(&pkg_includes_tmp, solvableid);
++            }
++        }
++
++        map_and(pool->considered, &pkg_includes_tmp);
++        map_free(&pkg_includes_tmp);
++    }
+     pool_createwhatprovides(priv->pool);
+     priv->considered_uptodate = TRUE;
+ }
+@@ -1156,6 +1175,23 @@ dnf_sack_count(DnfSack *sack)
+     return cnt;
+ }
+ 
++static void
++dnf_sack_add_excludes_or_includes(DnfSack *sack, Map **dest, DnfPackageSet *pkgset)
++{
++    Map *destmap = *dest;
++    if (destmap == NULL) {
++        destmap = g_malloc0(sizeof(Map));
++        Pool *pool = dnf_sack_get_pool(sack);
++        map_init(destmap, pool->nsolvables);
++        *dest = destmap;
++    }
++
++    Map *pkgmap = dnf_packageset_get_map(pkgset);
++    map_or(destmap, pkgmap);
++    DnfSackPrivate *priv = GET_PRIVATE(sack);
++    priv->considered_uptodate = FALSE;
++}
++
+ /**
+  * dnf_sack_add_excludes:
+  * @sack: a #DnfSack instance.
+@@ -1169,17 +1205,7 @@ void
+ dnf_sack_add_excludes(DnfSack *sack, DnfPackageSet *pset)
+ {
+     DnfSackPrivate *priv = GET_PRIVATE(sack);
+-    Pool *pool = dnf_sack_get_pool(sack);
+-    Map *excl = priv->pkg_excludes;
+-    Map *nexcl = dnf_packageset_get_map(pset);
+-
+-    if (excl == NULL) {
+-        excl = g_malloc0(sizeof(Map));
+-        map_init(excl, pool->nsolvables);
+-        priv->pkg_excludes = excl;
+-    }
+-    map_or(excl, nexcl);
+-    priv->considered_uptodate = FALSE;
++    dnf_sack_add_excludes_or_includes(sack, &priv->pkg_excludes, pset);
+ }
+ 
+ /**
+@@ -1195,17 +1221,65 @@ void
+ dnf_sack_add_includes(DnfSack *sack, DnfPackageSet *pset)
+ {
+     DnfSackPrivate *priv = GET_PRIVATE(sack);
+-    Pool *pool = dnf_sack_get_pool(sack);
+-    Map *incl = priv->pkg_includes;
+-    Map *nincl = dnf_packageset_get_map(pset);
++    dnf_sack_add_excludes_or_includes(sack, &priv->pkg_includes, pset);
++}
++
++static void
++dnf_sack_remove_excludes_or_includes(DnfSack *sack, Map *from, DnfPackageSet *pkgset)
++{
++    if (from == NULL)
++        return;
++    Map *pkgmap = dnf_packageset_get_map(pkgset);
++    map_subtract(from, pkgmap);
++    DnfSackPrivate *priv = GET_PRIVATE(sack);
++    priv->considered_uptodate = FALSE;
++}
++
++/**
++ * dnf_sack_remove_excludes:
++ * @sack: a #DnfSack instance.
++ * @pset: a #DnfPackageSet or %NULL.
++ *
++ * Removes excludes from the sack.
++ *
++ * Since: 0.9.4
++ */
++void
++dnf_sack_remove_excludes(DnfSack *sack, DnfPackageSet *pset)
++{
++    DnfSackPrivate *priv = GET_PRIVATE(sack);
++    dnf_sack_remove_excludes_or_includes(sack, priv->pkg_excludes, pset);
++}
+ 
+-    if (incl == NULL) {
+-        incl = g_malloc0(sizeof(Map));
+-        map_init(incl, pool->nsolvables);
+-        priv->pkg_includes = incl;
++/**
++ * dnf_sack_remove_includes:
++ * @sack: a #DnfSack instance.
++ * @pset: a #DnfPackageSet or %NULL.
++ *
++ * Removes includes from the sack.
++ *
++ * Since: 0.9.4
++ */
++void
++dnf_sack_remove_includes(DnfSack *sack, DnfPackageSet *pset)
++{
++    DnfSackPrivate *priv = GET_PRIVATE(sack);
++    dnf_sack_remove_excludes_or_includes(sack, priv->pkg_includes, pset);
++}
++
++static void
++dnf_sack_set_excludes_or_includes(DnfSack *sack, Map **dest, DnfPackageSet *pkgset)
++{
++    if (*dest == NULL && pkgset == NULL)
++        return;
++
++    *dest = free_map_fully(*dest);
++    if (pkgset) {
++        *dest = g_malloc0(sizeof(Map));
++        Map *pkgmap = dnf_packageset_get_map(pkgset);
++        map_init_clone(*dest, pkgmap);
+     }
+-    assert(incl->size >= nincl->size);
+-    map_or(incl, nincl);
++    DnfSackPrivate *priv = GET_PRIVATE(sack);
+     priv->considered_uptodate = FALSE;
+ }
+ 
+@@ -1222,15 +1296,7 @@ void
+ dnf_sack_set_excludes(DnfSack *sack, DnfPackageSet *pset)
+ {
+     DnfSackPrivate *priv = GET_PRIVATE(sack);
+-    priv->pkg_excludes = free_map_fully(priv->pkg_excludes);
+-
+-    if (pset) {
+-        Map *nexcl = dnf_packageset_get_map(pset);
+-
+-        priv->pkg_excludes = g_malloc0(sizeof(Map));
+-        map_init_clone(priv->pkg_excludes, nexcl);
+-    }
+-    priv->considered_uptodate = FALSE;
++    dnf_sack_set_excludes_or_includes(sack, &priv->pkg_excludes, pset);
+ }
+ 
+ /**
+@@ -1246,14 +1312,133 @@ void
+ dnf_sack_set_includes(DnfSack *sack, DnfPackageSet *pset)
+ {
+     DnfSackPrivate *priv = GET_PRIVATE(sack);
+-    priv->pkg_includes = free_map_fully(priv->pkg_includes);
++    dnf_sack_set_excludes_or_includes(sack, &priv->pkg_includes, pset);
++}
++
++/**
++ * dnf_sack_reset_excludes:
++ * @sack: a #DnfSack instance.
++ *
++ * Reset excludes (remove excludes map from memory).
++ *
++ * Since: 0.9.4
++ */
++void
++dnf_sack_reset_excludes(DnfSack *sack)
++{
++    dnf_sack_set_excludes(sack, NULL);
++}
++
++/**
++ * dnf_sack_reset_includes:
++ * @sack: a #DnfSack instance.
++ *
++ * Reset includes (remove includes map from memory).
++ *
++ * Since: 0.9.4
++ */
++void
++dnf_sack_reset_includes(DnfSack *sack)
++{
++    dnf_sack_set_includes(sack, NULL);
++}
++
++/**
++ * dnf_sack_get_excludes:
++ * @sack: a #DnfSack instance.
++ * @pset: a #DnfPackageSet or %NULL.
++ *
++ * Gets sack excludes.
++ *
++ * Since: 0.9.4
++ */
++DnfPackageSet *
++dnf_sack_get_excludes(DnfSack *sack)
++{
++    DnfSackPrivate *priv = GET_PRIVATE(sack);
++    Map *excl = priv->pkg_excludes;
++    return excl ? dnf_packageset_from_bitmap(sack, excl) : NULL;
++}
++
++/**
++ * dnf_sack_get_includes:
++ * @sack: a #DnfSack instance.
++ *
++ * Gets sack includes.
++ *
++ * Since: 0.9.4
++ */
++DnfPackageSet *
++dnf_sack_get_includes(DnfSack *sack)
++{
++    DnfSackPrivate *priv = GET_PRIVATE(sack);
++    Map *incl = priv->pkg_includes;
++    return incl ? dnf_packageset_from_bitmap(sack, incl) : NULL;
++}
+ 
+-    if (pset) {
+-        Map *nincl = dnf_packageset_get_map(pset);
+-        priv->pkg_includes = g_malloc0(sizeof(Map));
+-        map_init_clone(priv->pkg_includes, nincl);
++/**
++ * dnf_sack_set_use_includes:
++ * @sack: a #DnfSack instance.
++ * @repo_name: a name of repo or %NULL for all repos.
++ * @enabled: a use includes for a repo or all repos.
++ *
++ * Enable/disable usage of includes for repo/all-repos.
++ *
++ * Returns: FALSE if error occured (unknown reponame) else TRUE.
++ *
++ * Since: 0.9.4
++ */
++gboolean
++dnf_sack_set_use_includes(DnfSack *sack, const char *reponame, gboolean enabled)
++{
++    DnfSackPrivate *priv = GET_PRIVATE(sack);
++    Pool *pool = dnf_sack_get_pool(sack);
++
++    if (reponame) {
++        HyRepo hyrepo = hrepo_by_name(sack, reponame);
++        if (!hyrepo)
++            return FALSE;
++        if (hy_repo_get_use_includes(hyrepo) != enabled)
++        {
++            hy_repo_set_use_includes(hyrepo, enabled);
++            priv->considered_uptodate = FALSE;
++        }
++    } else {
++        Id repoid;
++        Repo *repo;
++        FOR_REPOS(repoid, repo) {
++            HyRepo hyrepo = pool->repos[repoid]->appdata;
++            if (hy_repo_get_use_includes(hyrepo) != enabled)
++            {
++                hy_repo_set_use_includes(hyrepo, enabled);
++                priv->considered_uptodate = FALSE;
++            }
++        }
+     }
+-    priv->considered_uptodate = FALSE;
++    return TRUE;
++}
++
++/**
++ * dnf_sack_get_use_includes:
++ * @sack: a #DnfSack instance.
++ * @repo_name: a name of repo or %NULL for all repos.
++ * @enabled: a returned state of includes for repo
++ *
++ * Enable/disable usage of includes for repo/all-repos.
++ *
++ * Returns: FALSE if error occured (unknown reponame) else TRUE.
++ *
++ * Since: 0.9.4
++ */
++gboolean
++dnf_sack_get_use_includes(DnfSack *sack, const char *reponame, gboolean *enabled)
++{
++    assert(reponame);
++    HyRepo hyrepo = hrepo_by_name(sack, reponame);
++    if (!hyrepo)
++        return FALSE;
++    *enabled = hy_repo_get_use_includes(hyrepo);
++    return TRUE;
+ }
+ 
+ /**
+diff --git a/libdnf/dnf-sack.h b/libdnf/dnf-sack.h
+index eeb5805..2e2b079 100644
+--- a/libdnf/dnf-sack.h
++++ b/libdnf/dnf-sack.h
+@@ -120,10 +120,24 @@ void         dnf_sack_add_excludes          (DnfSack        *sack,
+                                              DnfPackageSet  *pset);
+ void         dnf_sack_add_includes          (DnfSack        *sack,
+                                              DnfPackageSet  *pset);
++void         dnf_sack_remove_excludes       (DnfSack        *sack,
++                                             DnfPackageSet  *pset);
++void         dnf_sack_remove_includes       (DnfSack        *sack,
++                                             DnfPackageSet  *pset);
+ void         dnf_sack_set_excludes          (DnfSack        *sack,
+                                              DnfPackageSet  *pset);
+ void         dnf_sack_set_includes          (DnfSack        *sack,
+                                              DnfPackageSet  *pset);
++void         dnf_sack_reset_excludes        (DnfSack        *sack);
++void         dnf_sack_reset_includes        (DnfSack        *sack);
++DnfPackageSet *dnf_sack_get_includes        (DnfSack        *sack);
++DnfPackageSet *dnf_sack_get_excludes        (DnfSack        *sack);
++gboolean     dnf_sack_set_use_includes      (DnfSack        *sack,
++                                             const char     *reponame,
++                                             gboolean        enabled);
++gboolean     dnf_sack_get_use_includes      (DnfSack        *sack,
++                                             const char     *reponame,
++                                             gboolean       *enabled);
+ int          dnf_sack_repo_enabled          (DnfSack        *sack,
+                                              const char     *reponame,
+                                              int             enabled);
+diff --git a/libdnf/hy-repo-private.h b/libdnf/hy-repo-private.h
+index 756b13a..1abf4be 100644
+--- a/libdnf/hy-repo-private.h
++++ b/libdnf/hy-repo-private.h
+@@ -60,6 +60,7 @@ struct _HyRepo {
+     int main_nsolvables;
+     int main_nrepodata;
+     int main_end;
++    gboolean use_includes; 
+ };
+ 
+ enum _hy_repo_repodata {
+diff --git a/libdnf/hy-repo.c b/libdnf/hy-repo.c
+index 22a7694..e816ea8 100644
+--- a/libdnf/hy-repo.c
++++ b/libdnf/hy-repo.c
+@@ -143,6 +143,12 @@ hy_repo_get_priority(HyRepo repo)
+     return repo->priority;
+ }
+ 
++gboolean
++hy_repo_get_use_includes(HyRepo repo)
++{
++  return repo->use_includes;
++}
++
+ guint
+ hy_repo_get_n_solvables(HyRepo repo)
+ {
+@@ -165,6 +171,12 @@ hy_repo_set_priority(HyRepo repo, int value)
+         repo->libsolv_repo->priority = -value;
+ }
+ 
++void
++hy_repo_set_use_includes(HyRepo repo, gboolean enabled)
++{
++    repo->use_includes = enabled;
++}
++
+ void
+ hy_repo_set_string(HyRepo repo, int which, const char *str_val)
+ {
+diff --git a/libdnf/hy-repo.h b/libdnf/hy-repo.h
+index 3c19d09..d40a79b 100644
+--- a/libdnf/hy-repo.h
++++ b/libdnf/hy-repo.h
+@@ -40,9 +40,11 @@ enum _hy_repo_param_e {
+ HyRepo hy_repo_create(const char *name);
+ int hy_repo_get_cost(HyRepo repo);
+ int hy_repo_get_priority(HyRepo repo);
++gboolean hy_repo_get_use_includes(HyRepo repo);
+ guint hy_repo_get_n_solvables(HyRepo repo);
+ void hy_repo_set_cost(HyRepo repo, int value);
+ void hy_repo_set_priority(HyRepo repo, int value);
++void hy_repo_set_use_includes(HyRepo repo, gboolean enabled);
+ void hy_repo_set_string(HyRepo repo, int which, const char *str_val);
+ const char *hy_repo_get_string(HyRepo repo, int which);
+ void hy_repo_free(HyRepo repo);
+diff --git a/python/hawkey/sack-py.c b/python/hawkey/sack-py.c
+index d70e65f..bb14c69 100644
+--- a/python/hawkey/sack-py.c
++++ b/python/hawkey/sack-py.c
+@@ -446,6 +446,133 @@ add_includes(_SackObject *self, PyObject *seq)
+     Py_RETURN_NONE;
+ }
+ 
++static PyObject *
++remove_excludes(_SackObject *self, PyObject *seq)
++{
++    DnfSack *sack = self->sack;
++    DnfPackageSet *pset = pyseq_to_packageset(seq, sack);
++    if (pset == NULL)
++        return NULL;
++    dnf_sack_remove_excludes(sack, pset);
++    g_object_unref(pset);
++    Py_RETURN_NONE;
++}
++
++static PyObject *
++remove_includes(_SackObject *self, PyObject *seq)
++{
++    DnfSack *sack = self->sack;
++    DnfPackageSet *pset = pyseq_to_packageset(seq, sack);
++    if (pset == NULL)
++        return NULL;
++    dnf_sack_remove_includes(sack, pset);
++    g_object_unref(pset);
++    Py_RETURN_NONE;
++}
++
++static PyObject *
++set_excludes(_SackObject *self, PyObject *seq)
++{
++    DnfSack *sack = self->sack;
++    DnfPackageSet *pset = pyseq_to_packageset(seq, sack);
++    if (pset == NULL)
++        return NULL;
++    dnf_sack_set_excludes(sack, pset);
++    g_object_unref(pset);
++    Py_RETURN_NONE;
++}
++
++static PyObject *
++set_includes(_SackObject *self, PyObject *seq)
++{
++    DnfSack *sack = self->sack;
++    DnfPackageSet *pset = pyseq_to_packageset(seq, sack);
++    if (pset == NULL)
++        return NULL;
++    dnf_sack_set_includes(sack, pset);
++    g_object_unref(pset);
++    Py_RETURN_NONE;
++}
++
++static PyObject *
++reset_excludes(_SackObject *self)
++{
++    DnfSack *sack = self->sack;
++    dnf_sack_reset_excludes(sack);
++    Py_RETURN_NONE;
++}
++
++static PyObject *
++reset_includes(_SackObject *self)
++{
++    DnfSack *sack = self->sack;
++    dnf_sack_reset_includes(sack);
++    Py_RETURN_NONE;
++}
++
++static PyObject *
++get_excludes(_SackObject *self)
++{
++    DnfSack *sack = self->sack;
++    DnfPackageSet *pset = dnf_sack_get_excludes(sack);
++    if (!pset)
++        return PyList_New(0);
++    return packageset_to_pylist(pset, (PyObject *)self);
++}
++
++static PyObject *
++get_includes(_SackObject *self)
++{
++    DnfSack *sack = self->sack;
++    DnfPackageSet *pset = dnf_sack_get_includes(sack);
++    if (!pset)
++        return PyList_New(0);
++    return packageset_to_pylist(pset, (PyObject *)self);
++}
++
++static PyObject *
++set_use_includes(_SackObject *self, PyObject *args)
++{
++    PyObject *py_enabled;
++    const char *creponame = NULL;
++    if (!PyArg_ParseTuple(args, "O!|z", &PyBool_Type, &py_enabled, &creponame))
++        return NULL;
++
++    gboolean enabled = PyObject_IsTrue(py_enabled);
++    if (!dnf_sack_set_use_includes(self->sack, creponame, enabled)) {
++        PyErr_SetString(PyExc_ValueError, "Can't set use_includes for repo with given name.");
++        return NULL;
++    }
++
++    Py_RETURN_NONE;
++}
++
++static PyObject *
++get_use_includes(_SackObject *self, PyObject *reponame)
++{
++    DnfSack *sack = self->sack;
++
++    PyObject *tmp_py_str = NULL;
++    const char *creponame = pycomp_get_string(reponame, &tmp_py_str);
++    if (creponame == NULL) {
++        Py_XDECREF(tmp_py_str);
++        return NULL;
++    }
++
++    gboolean enabled;
++    if (!dnf_sack_get_use_includes(sack, creponame, &enabled)) {
++        Py_XDECREF(tmp_py_str);
++        PyErr_SetString(PyExc_ValueError, "Can't found repo with given name.");
++        return NULL;
++    }
++
++    Py_XDECREF(tmp_py_str);
++    if (enabled)
++        Py_RETURN_TRUE;
++    else
++        Py_RETURN_FALSE;
++}
++
+ static PyObject *
+ disable_repo(_SackObject *self, PyObject *reponame)
+ {
+@@ -569,6 +696,26 @@ PyMethodDef sack_methods[] = {
+      NULL},
+     {"add_includes", (PyCFunction)add_includes, METH_O,
+      NULL},
++    {"remove_excludes", (PyCFunction)remove_excludes, METH_O,
++     NULL},
++    {"remove_includes", (PyCFunction)remove_includes, METH_O,
++     NULL},
++    {"set_excludes", (PyCFunction)set_excludes, METH_O,
++     NULL},
++    {"set_includes", (PyCFunction)set_includes, METH_O,
++     NULL},
++    {"reset_excludes", (PyCFunction)reset_excludes, METH_NOARGS,
++     NULL},
++    {"reset_includes", (PyCFunction)reset_includes, METH_NOARGS,
++     NULL},
++    {"get_excludes", (PyCFunction)get_excludes, METH_NOARGS,
++     NULL},
++    {"get_includes", (PyCFunction)get_includes, METH_NOARGS,
++     NULL},
++    {"set_use_includes", (PyCFunction)set_use_includes, METH_VARARGS,
++     NULL},
++    {"get_use_includes", (PyCFunction)get_use_includes, METH_O,
++     NULL},
+     {"disable_repo", (PyCFunction)disable_repo, METH_O,
+      NULL},
+     {"enable_repo", (PyCFunction)enable_repo, METH_O,
+-- 
+2.14.1
+

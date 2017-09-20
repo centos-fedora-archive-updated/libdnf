@@ -1,7 +1,7 @@
-From f7330e6b7a6a72b43845f3d63fcfb7edc10f17be Mon Sep 17 00:00:00 2001
+From 0d2dcd85940711b79f9a8d18a8bf0e4ba8c9d391 Mon Sep 17 00:00:00 2001
 From: Martin Hatina <mhatina@redhat.com>
 Date: Mon, 21 Aug 2017 10:21:50 +0200
-Subject: [PATCH 2/3] add tests for module forms
+Subject: [PATCH 3/4] add tests for module forms
 
 ---
  libdnf/hy-subject.c         |  59 +++++-----
@@ -565,3 +565,6 @@ index c457f84..387a9c0 100644
      suite_add_tcase(s, tc);
  
      tc = tcase_create("Full");
+-- 
+2.14.1
+

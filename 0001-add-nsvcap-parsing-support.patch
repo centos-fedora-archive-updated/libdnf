@@ -1,8 +1,10 @@
-From 417ad83ee4a34a5c8a2b6733d8b2cfd0c17e8047 Mon Sep 17 00:00:00 2001
+From 11d860d8950c8ba3f775e82665d9981a6979ade8 Mon Sep 17 00:00:00 2001
 From: Martin Hatina <mhatina@redhat.com>
 Date: Mon, 14 Aug 2017 09:16:43 +0200
-Subject: [PATCH 2/4] add nsvcap parsing support
+Subject: [PATCH 1/3] add nsvcap parsing support
 
+Closes: #318
+Approved by: j-mracek
 ---
  libdnf/CMakeLists.txt            |   2 +
  libdnf/hy-module-form-private.h  |  34 ++++++
@@ -10,8 +12,8 @@ Subject: [PATCH 2/4] add nsvcap parsing support
  libdnf/hy-module-form.h          |  50 ++++++++
  libdnf/hy-subject-private.c      |  71 ++++++++++-
  libdnf/hy-subject-private.h      |   2 +
- libdnf/hy-subject.c              | 114 ++++++++++++++----
- libdnf/hy-subject.h              |  30 +++++
+ libdnf/hy-subject.c              |  88 +++++++++++++-
+ libdnf/hy-subject.h              |  31 +++++
  libdnf/hy-types.h                |   7 ++
  python/hawkey/CMakeLists.txt     |   1 +
  python/hawkey/__init__.py        |  53 +++++++-
@@ -20,7 +22,7 @@ Subject: [PATCH 2/4] add nsvcap parsing support
  python/hawkey/module-form-py.h   |  32 +++++
  python/hawkey/possibilities-py.c |   5 +
  python/hawkey/subject-py.c       |  66 ++++++++++
- 16 files changed, 836 insertions(+), 24 deletions(-)
+ 16 files changed, 826 insertions(+), 9 deletions(-)
  create mode 100644 libdnf/hy-module-form-private.h
  create mode 100644 libdnf/hy-module-form.c
  create mode 100644 libdnf/hy-module-form.h
@@ -390,7 +392,7 @@ index 993212e..8c9a474 100644
  
  #endif
 diff --git a/libdnf/hy-subject.c b/libdnf/hy-subject.c
-index 40be633..c61c6ad 100644
+index 823f985..e297ea8 100644
 --- a/libdnf/hy-subject.c
 +++ b/libdnf/hy-subject.c
 @@ -26,8 +26,10 @@
@@ -430,72 +432,7 @@ index 40be633..c61c6ad 100644
  static inline int
  is_glob_pattern(char *str)
  {
-@@ -50,18 +71,15 @@ is_glob_pattern(char *str)
- }
- 
- static inline int
--is_real_name(HyNevra nevra, DnfSack *sack, int flags)
-+is_real_name(char* name, char* version, DnfSack *sack, int flags)
- {
-     flags |= HY_NAME_ONLY;
--    int glob_version = (flags & HY_GLOB) && is_glob_pattern(nevra->version);
--    char *version = nevra->version;
--    if (nevra->name == NULL && !glob_version)
-+    int glob_version = (flags & HY_GLOB) && is_glob_pattern(version);
-+    if (name == NULL && !glob_version)
-         return 1;
--    if (glob_version)
--        version = NULL;
--    if (!is_glob_pattern(nevra->name))
-+    if (!is_glob_pattern(name))
-         flags &= ~HY_GLOB;
--    if (dnf_sack_knows(sack, nevra->name, version, flags) == 0)
-+    if (dnf_sack_knows(sack, name, glob_version ? NULL : version, flags) == 0)
-         return 0;
-     return 1;
- }
-@@ -80,17 +98,17 @@ arch_exist(char *arch, const char *existing_arch, int is_glob)
- }
- 
- static inline int
--is_real_arch(HyNevra nevra, DnfSack *sack, int flags)
-+is_real_arch(char* arch, DnfSack *sack, int flags)
- {
--    int check_glob = (flags & HY_GLOB) && is_glob_pattern(nevra->arch);
--    if (nevra->arch == NULL)
-+    int check_glob = (flags & HY_GLOB) && is_glob_pattern(arch);
-+    if (arch == NULL)
-         return 1;
--    if (arch_exist(nevra->arch, "src", check_glob))
-+    if (arch_exist(arch, "src", check_glob))
-         return 1;
-     const char **existing_arches = dnf_sack_list_arches(sack);
-     int ret = 0;
-     for (int i = 0; existing_arches[i] != NULL; ++i) {
--        if ((ret = arch_exist(nevra->arch, existing_arches[i], check_glob)))
-+        if ((ret = arch_exist(arch, existing_arches[i], check_glob)))
-             break;
-     }
-     g_free(existing_arches);
-@@ -100,8 +118,15 @@ is_real_arch(HyNevra nevra, DnfSack *sack, int flags)
- static inline int
- filter_real(HyNevra nevra, DnfSack *sack, int flags)
- {
--    return is_real_name(nevra, sack, flags) &&
--        is_real_arch(nevra, sack, flags);
-+    return is_real_name(nevra->name, nevra->version, sack, flags) &&
-+        is_real_arch(nevra->arch, sack, flags);
-+}
-+
-+static inline int
-+mod_filter_real(HyModuleForm module_form, DnfSack *sack, int flags)
-+{
-+    return is_real_name(module_form->name, NULL, sack, flags) &&
-+           is_real_arch(module_form->arch, sack, flags);
- }
- 
- HySubject
-@@ -121,6 +146,7 @@ hy_possibilities_free(HyPossibilities iter)
+@@ -121,6 +142,7 @@ hy_possibilities_free(HyPossibilities iter)
  {
      g_free(iter->subject);
      g_free(iter->forms);
@@ -503,7 +440,7 @@ index 40be633..c61c6ad 100644
      g_free(iter);
  }
  
-@@ -141,17 +167,35 @@ forms_dup(const HyForm *forms)
+@@ -141,17 +163,35 @@ forms_dup(const HyForm *forms)
      return res;
  }
  
@@ -542,7 +479,7 @@ index 40be633..c61c6ad 100644
          poss->current = -1;
      else
          poss->current = 0;
-@@ -161,7 +205,7 @@ possibilities_create(HySubject subject, const HyForm *forms, DnfSack *sack, int
+@@ -161,7 +201,7 @@ possibilities_create(HySubject subject, const HyForm *forms, DnfSack *sack, int
  HyPossibilities
  hy_subject_reldep_possibilities_real(HySubject subject, DnfSack *sack, int flags)
  {
@@ -551,7 +488,7 @@ index 40be633..c61c6ad 100644
  }
  
  int hy_possibilities_next_reldep(HyPossibilities iter, DnfReldep **out_reldep)
-@@ -188,7 +232,7 @@ HyPossibilities
+@@ -188,7 +228,7 @@ HyPossibilities
  hy_subject_nevra_possibilities(HySubject subject, HyForm *forms)
  {
      const HyForm *default_forms = forms == NULL ? HY_FORMS_MOST_SPEC : forms;
@@ -560,7 +497,7 @@ index 40be633..c61c6ad 100644
  }
  
  HyPossibilities
-@@ -196,7 +240,14 @@ hy_subject_nevra_possibilities_real(HySubject subject, HyForm *forms,
+@@ -196,7 +236,14 @@ hy_subject_nevra_possibilities_real(HySubject subject, HyForm *forms,
      DnfSack *sack, int flags)
  {
      const HyForm *default_forms = forms == NULL ? HY_FORMS_MOST_SPEC : forms;
@@ -576,7 +513,7 @@ index 40be633..c61c6ad 100644
  }
  
  int
-@@ -220,6 +271,27 @@ hy_possibilities_next_nevra(HyPossibilities iter, HyNevra *out_nevra)
+@@ -220,6 +267,35 @@ hy_possibilities_next_nevra(HyPossibilities iter, HyNevra *out_nevra)
      return -1;
  }
  
@@ -590,10 +527,7 @@ index 40be633..c61c6ad 100644
 +        iter->current++;
 +        *out_module_form = hy_module_form_create();
 +        if (module_form_possibility(iter->subject, form, *out_module_form) == 0) {
-+            if (iter->sack == NULL)
-+                return 0;
-+            if (mod_filter_real(*out_module_form, iter->sack, iter->flags))
-+                return 0;
++            return 0;
 +        }
 +        form = iter->module_forms[iter->current];
 +        g_clear_pointer(out_module_form, hy_module_form_free);
@@ -601,11 +535,22 @@ index 40be633..c61c6ad 100644
 +    return -1;
 +}
 +
- struct NevraToQuery {
-     int nevra_type;
-     int query_type;
++struct NevraToQuery {
++    int nevra_type;
++    int query_type;
++};
++
++/* Given a subject, attempt to create a query choose the first one, and update
++ * the query to try to match it.
++ *
++ * This code is based on rpm-software-management/dnf/subject.py:get_best_query() at git
++ * revision: 1d83fdc0280ca4202281ef489afe600e2f51a32a
++ */
+ HyQuery
+ hy_subject_get_best_solution(HySubject subject, DnfSack *sack, HyForm *forms, HyNevra *nevra,
+                              gboolean icase, gboolean with_nevra, gboolean with_provides,
 diff --git a/libdnf/hy-subject.h b/libdnf/hy-subject.h
-index 68d524d..e6d7623 100644
+index 20a2f48..1dd21ac 100644
 --- a/libdnf/hy-subject.h
 +++ b/libdnf/hy-subject.h
 @@ -26,6 +26,7 @@
@@ -659,7 +604,7 @@ index 68d524d..e6d7623 100644
  
  HySubject hy_subject_create(const char * pattern);
  void hy_subject_free(HySubject subject);
-@@ -65,7 +92,10 @@ HyPossibilities hy_subject_nevra_possibilities(HySubject subject,
+@@ -65,7 +92,11 @@ HyPossibilities hy_subject_nevra_possibilities(HySubject subject,
      HyForm *forms);
  HyPossibilities hy_subject_nevra_possibilities_real(HySubject subject,
      HyForm *forms, DnfSack *sack, int flags);
@@ -667,9 +612,10 @@ index 68d524d..e6d7623 100644
 +                                                     HyModuleFormE *forms);
  int hy_possibilities_next_nevra(HyPossibilities iter, HyNevra *out_nevra);
 +int hy_possibilities_next_module_form(HyPossibilities iter, HyModuleForm *out_module_form);
- 
- HyQuery hy_subject_get_best_query(HySubject subject, DnfSack *sack, gboolean with_provides);
- HySelector hy_subject_get_best_selector(HySubject subject, DnfSack *sack);
++
+ HyQuery hy_subject_get_best_solution(HySubject subject, DnfSack *sack, HyForm *forms,
+                                      HyNevra *nevra, gboolean icase, gboolean with_nevra,
+                                      gboolean with_provides, gboolean with_filenames);
 diff --git a/libdnf/hy-types.h b/libdnf/hy-types.h
 index 88d37c5..f98db84 100644
 --- a/libdnf/hy-types.h
@@ -704,7 +650,7 @@ index 86f100a..771e4e0 100644
      packagedelta-py.c
      possibilities-py.c
 diff --git a/python/hawkey/__init__.py b/python/hawkey/__init__.py
-index 0074687..c08c144 100644
+index 971848d..f48b393 100644
 --- a/python/hawkey/__init__.py
 +++ b/python/hawkey/__init__.py
 @@ -35,14 +35,18 @@ __all__ = [
@@ -752,8 +698,8 @@ index 0074687..c08c144 100644
  ICASE = _hawkey.ICASE
  EQ = _hawkey.EQ
  LT = _hawkey.LT
-@@ -201,6 +222,29 @@ class NEVRA(_hawkey.NEVRA):
-             not self.release and not self.arch
+@@ -197,6 +218,29 @@ class NEVRA(_hawkey.NEVRA):
+         return Query(query=_hawkey_query)
  
  
 +class ModuleForm(_hawkey.ModuleForm):
@@ -782,7 +728,7 @@ index 0074687..c08c144 100644
  class Goal(_hawkey.Goal):
      _reserved_kw = set(['package', 'select'])
      _flag_kw = set(['clean_deps', 'check_installed'])
-@@ -395,3 +439,8 @@ class Subject(_hawkey.Subject):
+@@ -391,3 +435,8 @@ class Subject(_hawkey.Subject):
          poss = super(Subject, self).nevra_possibilities_real(*args, **kwargs)
          for nevra in poss:
              yield NEVRA(nevra=nevra)
@@ -1159,10 +1105,10 @@ index e25c0e3..92a98db 100644
          DnfReldep *reldep;
          if (hy_possibilities_next_reldep(iter, &reldep) == 0)
 diff --git a/python/hawkey/subject-py.c b/python/hawkey/subject-py.c
-index 99c9ae3..42f1f3f 100644
+index f3519d3..06b34c9 100644
 --- a/python/hawkey/subject-py.c
 +++ b/python/hawkey/subject-py.c
-@@ -109,6 +109,26 @@ forms_from_list(PyObject *list)
+@@ -110,6 +110,26 @@ forms_from_list(PyObject *list)
      return forms;
  }
  
@@ -1189,7 +1135,7 @@ index 99c9ae3..42f1f3f 100644
  static HyForm *
  forms_from_int(PyObject *num)
  {
-@@ -118,6 +138,15 @@ forms_from_int(PyObject *num)
+@@ -119,6 +139,15 @@ forms_from_int(PyObject *num)
      return forms;
  }
  
@@ -1205,7 +1151,7 @@ index 99c9ae3..42f1f3f 100644
  static HyForm *
  fill_form(PyObject *o)
  {
-@@ -133,6 +162,21 @@ fill_form(PyObject *o)
+@@ -134,6 +163,21 @@ fill_form(PyObject *o)
      return cforms;
  }
  
@@ -1227,7 +1173,7 @@ index 99c9ae3..42f1f3f 100644
  /* object methods */
  
  static PyObject *
-@@ -188,6 +232,26 @@ nevra_possibilities_real(_SubjectObject *self, PyObject *args, PyObject *kwds)
+@@ -189,6 +233,26 @@ nevra_possibilities_real(_SubjectObject *self, PyObject *args, PyObject *kwds)
      return possibilitiesToPyObject(iter, sack);
  }
  
@@ -1254,7 +1200,7 @@ index 99c9ae3..42f1f3f 100644
  static PyObject *
  reldep_possibilities_real(_SubjectObject *self, PyObject *args, PyObject *kwds)
  {
-@@ -215,6 +279,8 @@ static struct PyMethodDef subject_methods[] = {
+@@ -262,6 +326,8 @@ static struct PyMethodDef subject_methods[] = {
      METH_VARARGS | METH_KEYWORDS, NULL},
      {"nevra_possibilities_real", (PyCFunction) nevra_possibilities_real,
      METH_VARARGS | METH_KEYWORDS, NULL},
@@ -1262,7 +1208,7 @@ index 99c9ae3..42f1f3f 100644
 +    METH_VARARGS | METH_KEYWORDS, NULL},
      {"reldep_possibilities_real", (PyCFunction) reldep_possibilities_real,
      METH_VARARGS | METH_KEYWORDS, NULL},
-     {NULL}                      /* sentinel */
+     {"get_best_solution", (PyCFunction) get_best_solution,
 -- 
-2.14.1
+2.14.2
 

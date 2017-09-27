@@ -1,5 +1,5 @@
 %global libsolv_version 0.6.21-1
-%global dnf_conflict 2.6.2
+%global dnf_conflict 2.7.2
 
 %bcond_with valgrind
 
@@ -21,16 +21,15 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.9.3
-Release:        6%{?dist}.modularity.2
+Version:        0.10.1
+Release:        1%{?dist}.modularity.1
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-Patch0:         0001-Enablement-for-includepkgs-option.patch
-Patch1:         0002-add-nsvcap-parsing-support.patch
-Patch2:         0003-add-tests-for-module-forms.patch
-Patch3:         0004-use-long-long-for-module_form-version-instead-of-int.patch
+Patch1:         0001-add-nsvcap-parsing-support.patch
+Patch2:         0002-add-tests-for-module-forms.patch
+Patch3:         0003-use-long-long-for-module_form-version-instead-of-int.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -169,6 +168,16 @@ popd
 %endif
 
 %changelog
+* Wed Sep 27 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.10.1-1
+- Update to 0.10.1
+- It improves query performance with name and arch filters. Also nevra filter will now
+  handle string with or without epoch.
+- Additionally for python bindings it renames NEVRA._has_just_name() to NEVRA.has_just_name() due
+  to movement of code into c part of library.
+- Resolves: rhbz#1260242 - --exclude does not affect dnf remove's removal of requirements
+- Resolves: rhbz#1485881 - DNF claims it cannot install package, which have been already installed
+- Resolves: rhbz#1361187 - [abrt] python-ipython-console: filter_updown(): python3.5 killed by SIGABRT
+
 * Fri Aug 11 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.9.3-6
 - Rebuilt after RPM update (№ 3)
 

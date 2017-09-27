@@ -1,18 +1,20 @@
-From 0d2dcd85940711b79f9a8d18a8bf0e4ba8c9d391 Mon Sep 17 00:00:00 2001
+From b721e4890f5f57fc3e7744a7c12e2a74adf155eb Mon Sep 17 00:00:00 2001
 From: Martin Hatina <mhatina@redhat.com>
 Date: Mon, 21 Aug 2017 10:21:50 +0200
-Subject: [PATCH 3/4] add tests for module forms
+Subject: [PATCH 2/3] add tests for module forms
 
+Closes: #318
+Approved by: j-mracek
 ---
- libdnf/hy-subject.c         |  59 +++++-----
+ libdnf/hy-subject.c         |  20 ++--
  libdnf/hy-subject.h         |  10 +-
  libdnf/hy-types.h           |   4 +-
  python/hawkey/subject-py.c  |  18 +--
  tests/hawkey/test_subject.c | 260 ++++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 302 insertions(+), 49 deletions(-)
+ 5 files changed, 286 insertions(+), 26 deletions(-)
 
 diff --git a/libdnf/hy-subject.c b/libdnf/hy-subject.c
-index c61c6ad..0163839 100644
+index e297ea8..10fce4f 100644
 --- a/libdnf/hy-subject.c
 +++ b/libdnf/hy-subject.c
 @@ -38,7 +38,7 @@
@@ -24,72 +26,7 @@ index c61c6ad..0163839 100644
          HY_MODULE_FORM_NSVCAP,
          HY_MODULE_FORM_NSVCA,
          HY_MODULE_FORM_NSVAP,
-@@ -71,15 +71,18 @@ is_glob_pattern(char *str)
- }
- 
- static inline int
--is_real_name(char* name, char* version, DnfSack *sack, int flags)
-+is_real_name(HyNevra nevra, DnfSack *sack, int flags)
- {
-     flags |= HY_NAME_ONLY;
--    int glob_version = (flags & HY_GLOB) && is_glob_pattern(version);
--    if (name == NULL && !glob_version)
-+    int glob_version = (flags & HY_GLOB) && is_glob_pattern(nevra->version);
-+    char *version = nevra->version;
-+    if (nevra->name == NULL && !glob_version)
-         return 1;
--    if (!is_glob_pattern(name))
-+    if (glob_version)
-+        version = NULL;
-+    if (!is_glob_pattern(nevra->name))
-         flags &= ~HY_GLOB;
--    if (dnf_sack_knows(sack, name, glob_version ? NULL : version, flags) == 0)
-+    if (dnf_sack_knows(sack, nevra->name, version, flags) == 0)
-         return 0;
-     return 1;
- }
-@@ -98,17 +101,17 @@ arch_exist(char *arch, const char *existing_arch, int is_glob)
- }
- 
- static inline int
--is_real_arch(char* arch, DnfSack *sack, int flags)
-+is_real_arch(HyNevra nevra, DnfSack *sack, int flags)
- {
--    int check_glob = (flags & HY_GLOB) && is_glob_pattern(arch);
--    if (arch == NULL)
-+    int check_glob = (flags & HY_GLOB) && is_glob_pattern(nevra->arch);
-+    if (nevra->arch == NULL)
-         return 1;
--    if (arch_exist(arch, "src", check_glob))
-+    if (arch_exist(nevra->arch, "src", check_glob))
-         return 1;
-     const char **existing_arches = dnf_sack_list_arches(sack);
-     int ret = 0;
-     for (int i = 0; existing_arches[i] != NULL; ++i) {
--        if ((ret = arch_exist(arch, existing_arches[i], check_glob)))
-+        if ((ret = arch_exist(nevra->arch, existing_arches[i], check_glob)))
-             break;
-     }
-     g_free(existing_arches);
-@@ -118,15 +121,8 @@ is_real_arch(char* arch, DnfSack *sack, int flags)
- static inline int
- filter_real(HyNevra nevra, DnfSack *sack, int flags)
- {
--    return is_real_name(nevra->name, nevra->version, sack, flags) &&
--        is_real_arch(nevra->arch, sack, flags);
--}
--
--static inline int
--mod_filter_real(HyModuleForm module_form, DnfSack *sack, int flags)
--{
--    return is_real_name(module_form->name, NULL, sack, flags) &&
--           is_real_arch(module_form->arch, sack, flags);
-+    return is_real_name(nevra, sack, flags) &&
-+        is_real_arch(nevra, sack, flags);
- }
- 
- HySubject
-@@ -167,17 +163,17 @@ forms_dup(const HyForm *forms)
+@@ -163,17 +163,17 @@ forms_dup(const HyForm *forms)
      return res;
  }
  
@@ -112,7 +49,7 @@ index c61c6ad..0163839 100644
          form = forms[i];
          res[i++] = form;
      } while (form != _HY_MODULE_FORM_STOP_);
-@@ -185,7 +181,7 @@ module_forms_dup(const HyModuleFormE *forms)
+@@ -181,7 +181,7 @@ module_forms_dup(const HyModuleFormE *forms)
  }
  
  static HyPossibilities
@@ -121,7 +58,7 @@ index c61c6ad..0163839 100644
                       int flags, enum poss_type type)
  {
      HyPossibilities poss = g_malloc0(sizeof(*poss));
-@@ -244,9 +240,9 @@ hy_subject_nevra_possibilities_real(HySubject subject, HyForm *forms,
+@@ -240,9 +240,9 @@ hy_subject_nevra_possibilities_real(HySubject subject, HyForm *forms,
  }
  
  HyPossibilities
@@ -133,7 +70,7 @@ index c61c6ad..0163839 100644
      return possibilities_create(subject, NULL, default_forms, NULL, 0, TYPE_MODULE_FORM);
  }
  
-@@ -276,15 +272,12 @@ hy_possibilities_next_module_form(HyPossibilities iter, HyModuleForm *out_module
+@@ -272,7 +272,7 @@ hy_possibilities_next_module_form(HyPossibilities iter, HyModuleForm *out_module
  {
      if (iter->type != TYPE_MODULE_FORM || iter->current == -1)
          return -1;
@@ -142,17 +79,8 @@ index c61c6ad..0163839 100644
      while (form != _HY_MODULE_FORM_STOP_) {
          iter->current++;
          *out_module_form = hy_module_form_create();
-         if (module_form_possibility(iter->subject, form, *out_module_form) == 0) {
--            if (iter->sack == NULL)
--                return 0;
--            if (mod_filter_real(*out_module_form, iter->sack, iter->flags))
--                return 0;
-+            return 0;
-         }
-         form = iter->module_forms[iter->current];
-         g_clear_pointer(out_module_form, hy_module_form_free);
 diff --git a/libdnf/hy-subject.h b/libdnf/hy-subject.h
-index e6d7623..b9a3d1c 100644
+index 1dd21ac..2daee5c 100644
 --- a/libdnf/hy-subject.h
 +++ b/libdnf/hy-subject.h
 @@ -46,9 +46,9 @@ enum _HyForm {
@@ -209,10 +137,10 @@ index f98db84..edf04af 100644
  
  typedef struct _HyRepo * HyRepo;
 diff --git a/python/hawkey/subject-py.c b/python/hawkey/subject-py.c
-index 42f1f3f..caafd1d 100644
+index 06b34c9..012699e 100644
 --- a/python/hawkey/subject-py.c
 +++ b/python/hawkey/subject-py.c
-@@ -109,10 +109,10 @@ forms_from_list(PyObject *list)
+@@ -110,10 +110,10 @@ forms_from_list(PyObject *list)
      return forms;
  }
  
@@ -225,7 +153,7 @@ index 42f1f3f..caafd1d 100644
      int i = 0;
      const int BLOCK_SIZE = 17;
      while (i < PyList_Size(list)) {
-@@ -121,10 +121,10 @@ module_forms_from_list(PyObject *list)
+@@ -122,10 +122,10 @@ module_forms_from_list(PyObject *list)
              g_free(forms);
              return NULL;
          }
@@ -238,7 +166,7 @@ index 42f1f3f..caafd1d 100644
      forms[i] = _HY_MODULE_FORM_STOP_;
      return forms;
  }
-@@ -138,10 +138,10 @@ forms_from_int(PyObject *num)
+@@ -139,10 +139,10 @@ forms_from_int(PyObject *num)
      return forms;
  }
  
@@ -251,7 +179,7 @@ index 42f1f3f..caafd1d 100644
      forms[0] = PyLong_AsLong(num);
      forms[1] = _HY_MODULE_FORM_STOP_;
      return forms;
-@@ -162,10 +162,10 @@ fill_form(PyObject *o)
+@@ -163,10 +163,10 @@ fill_form(PyObject *o)
      return cforms;
  }
  
@@ -264,7 +192,7 @@ index 42f1f3f..caafd1d 100644
      if (PyList_Check(o))
          cforms = module_forms_from_list(o);
      else if (PyInt_Check(o))
-@@ -240,7 +240,7 @@ module_form_possibilities(_SubjectObject *self, PyObject *args, PyObject *kwds)
+@@ -241,7 +241,7 @@ module_form_possibilities(_SubjectObject *self, PyObject *args, PyObject *kwds)
      if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", (char**) kwlist, &form)) {
          return NULL;
      }
@@ -566,5 +494,5 @@ index c457f84..387a9c0 100644
  
      tc = tcase_create("Full");
 -- 
-2.14.1
+2.14.2
 

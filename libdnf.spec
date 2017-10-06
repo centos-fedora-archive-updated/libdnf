@@ -238,7 +238,7 @@ popd
 %endif
 
 %changelog
-* Wed Oct 02 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.10.1-2
+* Mon Oct 02 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.10.1-2
 - Rerelease of 0.10.1-1
 
 * Wed Sep 27 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.10.1-1

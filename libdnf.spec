@@ -17,14 +17,18 @@
 %endif
 
 %bcond_without python2
+%if 0%{?fedora} >= 27 || 0%{?rhel} > 7
 %bcond_without platform_python
+%else
+%bcond_with platform_python
+%endif
 
 %global _cmake_opts \\\
     -DENABLE_RHSM_SUPPORT=%{?with_rhsm:ON}%{!?with_rhsm:OFF} \\\
     %{nil}
 
 Name:           libdnf
-Version:        0.10.1
+Version:        0.11.0
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -234,6 +238,12 @@ popd
 %endif
 
 %changelog
+* Tue Oct 10 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.11.0-1
+- Update to 0.11.0
+
+* Mon Oct 02 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.10.1-2
+- Rerelease of 0.10.1-1
+
 * Wed Sep 27 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.10.1-1
 - Update to 0.10.1
 - It improves query performance with name and arch filters. Also nevra filter will now
@@ -244,6 +254,8 @@ popd
 - Resolves: rhbz#1485881 - DNF claims it cannot install package, which have been already installed
 - Resolves: rhbz#1361187 - [abrt] python-ipython-console: filter_updown(): python3.5 killed by SIGABRT
 
+* Fri Sep 15 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.9.3-8
+- Disable platform python on old releases
 
 * Tue Aug 15 2017 Lumír Balhar <lbalhar@redhat.com> - 0.9.3-7
 - Add platform-python subpackage

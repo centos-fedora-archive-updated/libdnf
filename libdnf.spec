@@ -21,7 +21,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.10.1
+Version:        0.11.0
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -165,6 +165,9 @@ popd
 %endif
 
 %changelog
+* Tue Oct 10 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.11.0-1
+- Update to 0.11.0
+
 * Wed Sep 27 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.10.1-1
 - Update to 0.10.1
 - It improves query performance with name and arch filters. Also nevra filter will now

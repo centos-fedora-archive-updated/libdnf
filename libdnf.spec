@@ -28,7 +28,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.11.0
+Version:        0.11.1
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -238,6 +238,13 @@ popd
 %endif
 
 %changelog
+* Mon Oct 16 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.11.1-1
+- Rerelease of 0.11.1-1
+- Improvement query performance
+- Run file query in hy_subject_get_best_solution only for files (arguments that start with ``/`` or
+  ``*/``)
+- Resolves: rhbz#1498207 - DNF crash during upgrade installation F26 -> F27
+
 * Tue Oct 10 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.11.0-1
 - Update to 0.11.0
 

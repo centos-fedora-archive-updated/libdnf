@@ -16,20 +16,13 @@
 %bcond_with rhsm
 %endif
 
-%bcond_without python2
-%if 0%{?fedora} >= 27 || 0%{?rhel} > 7
-%bcond_without platform_python
-%else
-%bcond_with platform_python
-%endif
-
 %global _cmake_opts \\\
     -DENABLE_RHSM_SUPPORT=%{?with_rhsm:ON}%{!?with_rhsm:OFF} \\\
     %{nil}
 
 Name:           libdnf
 Version:        0.11.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -64,7 +57,6 @@ Requires:       libsolv-devel%{?_isa} >= %{libsolv_version}
 %description devel
 Development files for %{name}.
 
-%if %{with python2}
 %package -n python2-hawkey
 Summary:        Python 2 bindings for the hawkey library
 %{?python_provide:%python_provide python2-hawkey}
@@ -82,7 +74,6 @@ Conflicts:      python-dnf < %{dnf_conflict}
 
 %description -n python2-hawkey
 Python 2 bindings for the hawkey library.
-%endif
 
 %if %{with python3}
 %package -n python3-hawkey
@@ -94,65 +85,28 @@ Requires:       %{name}%{?_isa} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility
 # Can be deleted for distros where only python3-dnf >= 2.0.0
 Conflicts:      python3-dnf < %{dnf_conflict}
+Obsoletes:      platform-python-hawkey < 0.11.1-2
 
 %description -n python3-hawkey
 Python 3 bindings for the hawkey library.
 %endif
 
-%if %{with platform_python}
-%package -n platform-python-hawkey
-Summary:        Platform Python bindings for the hawkey library
-BuildRequires:  platform-python-devel
-BuildRequires:  platform-python-nose
-Requires:       %{name}%{?_isa} = %{version}-%{release}
-# Fix problem with hawkey - dnf version incompatibility
-# Can be deleted for distros where only platform-python-dnf >= 2.0.0
-Conflicts:      platform-python-dnf < %{dnf_conflict}
-
-%description -n platform-python-hawkey
-Platform Python bindings for the hawkey library.
-%endif
-
 %prep
-%autosetup -p1
-
-%if %{with python2}
+%autosetup
 mkdir build-py2
-%endif
 %if %{with python3}
 mkdir build-py3
 %endif
-%if %{with platform_python}
-mkdir build-platform_python
-%endif
 
 %build
-%if %{with python2}
 pushd build-py2
   %cmake -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
-%endif
 
 %if %{with python3}
 pushd build-py3
   %cmake -DPYTHON_DESIRED:str=3 -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
-  %make_build
-popd
-%endif
-
-%if %{with platform_python}
-pushd build-platform_python
-export python_so=%{_libdir}/`%{__platform_python} -c 'import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))'`
-export python_include=`%{__platform_python} -c 'import sysconfig; print(sysconfig.get_path("include"))'`
-  %cmake \
-    -DPYTHON_EXECUTABLE:FILEPATH=%{__platform_python} \
-    -DPYTHON_LIBRARY=$python_so \
-    -DPYTHON_INCLUDE_DIR=$python_include \
-    -DPYTHON_DESIRED:str=3 \
-    -DWITH_GIR=1 \
-    -DWITH_MAN=0 \
-    -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 %endif
@@ -165,12 +119,9 @@ Please build the package as non-root user.
 ERROR
         exit 1
 fi
-%if %{with python2}
 pushd build-py2
   make ARGS="-V" test
 popd
-%endif
-
 %if %{with python3}
 # Run just the Python tests, not all of them, since
 # we have coverage of the core from the first build
@@ -179,29 +130,12 @@ pushd build-py3/python/hawkey/tests
 popd
 %endif
 
-%if %{with platform_python}
-# Run just the Python tests, not all of them, since
-# we have coverage of the core from the first build
-pushd build-platform_python/python/hawkey/tests
-  make ARGS="-V" test
-popd
-%endif
-
 %install
-%if %{with python2}
 pushd build-py2
   %make_install
 popd
-%endif
-
 %if %{with python3}
 pushd build-py3
-  %make_install
-popd
-%endif
-
-%if %{with platform_python}
-pushd build-platform_python
   %make_install
 popd
 %endif
@@ -222,22 +156,18 @@ popd
 %{_includedir}/%{name}/
 %{_datadir}/gir-1.0/Dnf-*.gir
 
-%if %{with python2}
 %files -n python2-hawkey
 %{python2_sitearch}/hawkey/
-%endif
 
 %if %{with python3}
 %files -n python3-hawkey
 %{python3_sitearch}/hawkey/
 %endif
 
-%if %{with platform_python}
-%files -n platform-python-hawkey
-%{platform_python_sitearch}/hawkey/
-%endif
-
 %changelog
+* Fri Nov 03 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.11.1-2
+- Remove platform-python subpackage
+
 * Mon Oct 16 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.11.1-1
 - Rerelease of 0.11.1-1
 - Improvement query performance

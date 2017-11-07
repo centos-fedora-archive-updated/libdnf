@@ -22,7 +22,7 @@
 
 Name:           libdnf
 Version:        0.11.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -85,7 +85,7 @@ Requires:       %{name}%{?_isa} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility
 # Can be deleted for distros where only python3-dnf >= 2.0.0
 Conflicts:      python3-dnf < %{dnf_conflict}
-Obsoletes:      platform-python-hawkey < 0.11.1-2
+Obsoletes:      platform-python-hawkey < %{version}-%{release}
 
 %description -n python3-hawkey
 Python 3 bindings for the hawkey library.
@@ -165,6 +165,9 @@ popd
 %endif
 
 %changelog
+* Tue Nov 07 2017 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.11.1-3
+- Use better Obsoletes for platform-python
+
 * Fri Nov 03 2017 Igor Gnatenko <ignatenko@redhat.com> - 0.11.1-2
 - Remove platform-python subpackage
 

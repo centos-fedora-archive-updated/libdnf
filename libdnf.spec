@@ -22,11 +22,13 @@
 
 Name:           libdnf
 Version:        0.11.1
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+
+Patch666: test.diff
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -92,7 +94,7 @@ Python 3 bindings for the hawkey library.
 %endif
 
 %prep
-%autosetup
+%autosetup -p1
 mkdir build-py2
 %if %{with python3}
 mkdir build-py3
@@ -140,8 +142,7 @@ pushd build-py3
 popd
 %endif
 
-%post -p /sbin/ldconfig
-%postun -p /sbin/ldconfig
+%ldconfig_scriptlets
 
 %files
 %license COPYING
@@ -165,6 +166,9 @@ popd
 %endif
 
 %changelog
+* Tue Jan 30 2018 Igor Gnatenko <ignatenko@redhat.com> - 0.11.1-4
+- Switch to %%ldconfig_scriptlets
+
 * Tue Nov 07 2017 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.11.1-3
 - Use better Obsoletes for platform-python
 

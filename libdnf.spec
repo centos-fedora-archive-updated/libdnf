@@ -22,7 +22,7 @@
 
 Name:           libdnf
 Version:        0.11.1
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -164,6 +164,9 @@ popd
 %endif
 
 %changelog
+* Fri Jun 15 2018 Miro Hrončok <mhroncok@redhat.com> - 0.11.1-6
+- Rebuilt for Python 3.7
+
 * Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 0.11.1-5
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 

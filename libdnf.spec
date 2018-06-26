@@ -23,7 +23,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.15.0
+Version:        0.15.1
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -204,8 +204,8 @@ popd
 %endif
 
 %changelog
-* Tue Jun 26 2018 Jaroslav Mracek <> - 0.15.0-1
-- Update to 0.15.0
+* Tue Jun 26 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.15.1-1
+- Update to 0.15.1
 
 * Fri Jun 15 2018 Miro Hrončok <mhroncok@redhat.com> - 0.11.1-6
 - Rebuilt for Python 3.7

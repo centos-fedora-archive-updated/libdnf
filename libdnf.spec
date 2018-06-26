@@ -1,5 +1,7 @@
-%global libsolv_version 0.6.21-1
-%global dnf_conflict 2.7.2
+%global libsolv_version 0.6.30-1
+%global libmodulemd_version 1.4.0
+%global dnf_conflict 3.0.0
+%global swig_version 3.0.12
 
 %bcond_with valgrind
 
@@ -21,8 +23,8 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.11.1
-Release:        6%{?dist}
+Version:        0.15.0
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -30,6 +32,7 @@ Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  cmake
 BuildRequires:  gcc
+BuildRequires:  gcc-c++
 BuildRequires:  libsolv-devel >= %{libsolv_version}
 BuildRequires:  pkgconfig(librepo)
 BuildRequires:  pkgconfig(check)
@@ -38,12 +41,16 @@ BuildRequires:  valgrind
 %endif
 BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.46.0
 BuildRequires:  pkgconfig(gtk-doc)
-BuildRequires:  pkgconfig(gobject-introspection-1.0)
 BuildRequires:  rpm-devel >= 4.11.0
 %if %{with rhsm}
 BuildRequires:  pkgconfig(librhsm)
 %endif
+BuildRequires:  pkgconfig(sqlite3)
+BuildRequires:  pkgconfig(json-c)
+BuildRequires:  pkgconfig(cppunit)
+BuildRequires:  pkgconfig(modulemd) >= %{libmodulemd_version}
 
+Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
 Requires:       libsolv%{?_isa} >= %{libsolv_version}
 
 %description
@@ -56,6 +63,31 @@ Requires:       libsolv-devel%{?_isa} >= %{libsolv_version}
 
 %description devel
 Development files for %{name}.
+
+%package -n python2-%{name}
+%{?python_provide:%python_provide python2-%{name}}
+Summary:        Python 2 bindings for the libdnf library.
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+BuildRequires:  python2-devel
+BuildRequires:  python2-sphinx
+BuildRequires:  swig >= %{swig_version}
+
+%description -n python2-%{name}
+Python 2 bindings for the libdnf library.
+
+
+%if %{with python3}
+%package -n python3-%{name}
+%{?python_provide:%python_provide python3-%{name}}
+Summary:        Python 3 bindings for the libdnf library.
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+BuildRequires:  python3-devel
+BuildRequires:  python3-sphinx
+BuildRequires:  swig >= %{swig_version}
+
+%description -n python3-%{name}
+Python 3 bindings for the libdnf library.
+%endif
 
 %package -n python2-hawkey
 Summary:        Python 2 bindings for the hawkey library
@@ -100,7 +132,7 @@ mkdir build-py3
 
 %build
 pushd build-py2
-  %cmake -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:str=2 -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 
@@ -119,6 +151,7 @@ Please build the package as non-root user.
 ERROR
         exit 1
 fi
+
 pushd build-py2
   make ARGS="-V" test
 popd
@@ -140,20 +173,27 @@ pushd build-py3
 popd
 %endif
 
-%ldconfig_scriptlets
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
 
 %files
 %license COPYING
-%doc README.md AUTHORS NEWS
+%doc README.md AUTHORS
 %{_libdir}/%{name}.so.*
-%{_libdir}/girepository-1.0/Dnf-*.typelib
 
 %files devel
 %doc %{_datadir}/gtk-doc/html/%{name}/
 %{_libdir}/%{name}.so
 %{_libdir}/pkgconfig/%{name}.pc
 %{_includedir}/%{name}/
-%{_datadir}/gir-1.0/Dnf-*.gir
+
+%files -n python2-%{name}
+%{python2_sitearch}/%{name}/
+
+%if %{with python3}
+%files -n python3-%{name}
+%{python3_sitearch}/%{name}/
+%endif
 
 %files -n python2-hawkey
 %{python2_sitearch}/hawkey/
@@ -164,6 +204,9 @@ popd
 %endif
 
 %changelog
+* Tue Jun 26 2018 Jaroslav Mracek <> - 0.15.0-1
+- Update to 0.15.0
+
 * Fri Jun 15 2018 Miro Hrončok <mhroncok@redhat.com> - 0.11.1-6
 - Rebuilt for Python 3.7
 

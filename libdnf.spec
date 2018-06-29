@@ -24,7 +24,7 @@
 
 Name:           libdnf
 Version:        0.15.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -173,8 +173,12 @@ pushd build-py3
 popd
 %endif
 
+%if 0%{?rhel} && 0%{?rhel} <= 7
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
+%else
+%ldconfig_scriptlets
+%endif
 
 %files
 %license COPYING
@@ -204,6 +208,9 @@ popd
 %endif
 
 %changelog
+* Fri Jun 29 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.15.1-2
+- Restore proper ldconfig_scriptlets
+
 * Tue Jun 26 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.15.1-1
 - Update to 0.15.1
 

@@ -23,8 +23,8 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.15.1
-Release:        2%{?dist}
+Version:        0.15.2
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -99,6 +99,7 @@ BuildRequires:  python-nose
 BuildRequires:  python2-nose
 %endif
 Requires:       %{name}%{?_isa} = %{version}-%{release}
+Requires:       python2-%{name} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility
 # Can be deleted for distros where only python2-dnf >= 2.0.0
 Conflicts:      python2-dnf < %{dnf_conflict}
@@ -114,9 +115,11 @@ Summary:        Python 3 bindings for the hawkey library
 BuildRequires:  python3-devel
 BuildRequires:  python3-nose
 Requires:       %{name}%{?_isa} = %{version}-%{release}
+Requires:       python3-%{name} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility
 # Can be deleted for distros where only python3-dnf >= 2.0.0
 Conflicts:      python3-dnf < %{dnf_conflict}
+# Obsoletes F27 packages
 Obsoletes:      platform-python-hawkey < %{version}-%{release}
 
 %description -n python3-hawkey
@@ -208,6 +211,10 @@ popd
 %endif
 
 %changelog
+* Fri Jun 29 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.15.2-1
+- Update to 0.15.1
+- Resolves: rhbz#1595487
+
 * Fri Jun 29 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.15.1-2
 - Restore proper ldconfig_scriptlets
 

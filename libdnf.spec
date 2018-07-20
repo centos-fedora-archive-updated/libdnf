@@ -1,5 +1,5 @@
 %global libsolv_version 0.6.30-1
-%global libmodulemd_version 1.4.0
+%global libmodulemd_version 1.6.1
 %global dnf_conflict 3.0.0
 %global swig_version 3.0.12
 
@@ -12,7 +12,7 @@
 %bcond_without python3
 %endif
 
-%if 0%{?rhel} && 0%{!?centos}
+%if 0%{?rhel} && ! 0%{?centos}
 %bcond_without rhsm
 %else
 %bcond_with rhsm
@@ -23,8 +23,8 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.15.2
-Release:        2%{?dist}
+Version:        0.16.0
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -43,7 +43,7 @@ BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.46.0
 BuildRequires:  pkgconfig(gtk-doc)
 BuildRequires:  rpm-devel >= 4.11.0
 %if %{with rhsm}
-BuildRequires:  pkgconfig(librhsm)
+BuildRequires:  pkgconfig(librhsm) >= 0.0.3
 %endif
 BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)
@@ -135,13 +135,13 @@ mkdir build-py3
 
 %build
 pushd build-py2
-  %cmake -DPYTHON_DESIRED:str=2 -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 
 %if %{with python3}
 pushd build-py3
-  %cmake -DPYTHON_DESIRED:str=3 -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 %endif
@@ -211,6 +211,11 @@ popd
 %endif
 
 %changelog
+* Sun Jul 22 2018 Daniel Mach <dmach@redhat.com> - 0.16.0-1
+- Fix RHSM plugin
+- Add support for logging
+- Bump minimal libmodulemd version to 1.6.1
+
 * Fri Jul 13 2018 Fedora Release Engineering <releng@fedoraproject.org> - 0.15.2-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
 

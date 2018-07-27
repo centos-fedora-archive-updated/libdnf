@@ -24,7 +24,7 @@
 
 Name:           libdnf
 Version:        0.16.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -214,6 +214,9 @@ popd
 %endif
 
 %changelog
+* Fri Jul 27 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.16.1-3
+- Rebuild for new binutils
+
 * Fri Jul 27 2018 Daniel Mach <dmach@redhat.com> - 0.16.1-2
 - [module] Implement 'module_hotfixes' conf option to skip filtering RPMs from hotfix repos.
 - [goal] Fix distupgrade filter, allow downgrades.

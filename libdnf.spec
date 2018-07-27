@@ -23,7 +23,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.16.0
+Version:        0.16.1
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -49,6 +49,7 @@ BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)
 BuildRequires:  pkgconfig(cppunit)
 BuildRequires:  pkgconfig(modulemd) >= %{libmodulemd_version}
+BuildRequires:  gettext
 
 Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
 Requires:       libsolv%{?_isa} >= %{libsolv_version}
@@ -176,6 +177,8 @@ pushd build-py3
 popd
 %endif
 
+%find_lang %{name}
+
 %if 0%{?rhel} && 0%{?rhel} <= 7
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
@@ -183,7 +186,7 @@ popd
 %ldconfig_scriptlets
 %endif
 
-%files
+%files -f %{name}.lang
 %license COPYING
 %doc README.md AUTHORS
 %{_libdir}/%{name}.so.*
@@ -211,6 +214,15 @@ popd
 %endif
 
 %changelog
+* Fri Jul 27 2018 Daniel Mach <dmach@redhat.com> - 0.16.1-1
+- [module] Implement 'module_hotfixes' conf option to skip filtering RPMs from hotfix repos.
+- [goal] Fix distupgrade filter, allow downgrades.
+- [context] Allow to set module platform in context.
+- [module] Introduce proper modular dependency solving.
+- [module] Platform pseudo-module based on /etc/os-release.
+- [goal] Add Goal::listSuggested().
+- [l10n] Support for translations, add gettext build dependency.
+
 * Sun Jul 22 2018 Daniel Mach <dmach@redhat.com> - 0.16.0-1
 - Fix RHSM plugin
 - Add support for logging

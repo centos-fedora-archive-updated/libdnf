@@ -23,8 +23,8 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.16.1
-Release:        3%{?dist}
+Version:        0.17.0
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -214,6 +214,13 @@ popd
 %endif
 
 %changelog
+* Tue Aug 07 2018 Daniel Mach <dmach@redhat.com> - 0.17.0-1
+- [conf] Add module_platform_id option.
+- [module] Add ModulePackageContainer class.
+- [module] Add ModulePersistor class.
+- [sack] Module filtering made available in python API
+- [sack] Module auto-enabling according to installed packages
+
 * Fri Jul 27 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.16.1-3
 - Rebuild for new binutils
 

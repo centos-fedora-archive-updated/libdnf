@@ -23,17 +23,12 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.17.0
-Release:        2%{?dist}
+Version:        0.17.1
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-# Backported from upstream: fixes an issue that prevented anaconda
-# running dnf as a subprocess, which caused anaconda crash
-# https://bugzilla.redhat.com/show_bug.cgi?id=1614511
-# https://github.com/rpm-software-management/libdnf/pull/546
-Patch0:         0001-transaction-Fix-crash-after-using-dnf.comps.CompsQue.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -54,6 +49,7 @@ BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)
 BuildRequires:  pkgconfig(cppunit)
 BuildRequires:  pkgconfig(modulemd) >= %{libmodulemd_version}
+BuildRequires:  pkgconfig(smartcols)
 BuildRequires:  gettext
 
 Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
@@ -219,6 +215,14 @@ popd
 %endif
 
 %changelog
+* Mon Aug 13 2018 Daniel Mach <dmach@redhat.com> - 0.17.1-1
+- [module] Solve a problem in python constructor of NSVCAP if no version.
+- [translations] Update translations from zanata.
+- [transaction] Fix crash after using dnf.comps.CompsQuery and forking the process in Anaconda.
+- [module] Support for resetting module state.
+- [output] Introduce wrapper for smartcols.
+
+
 * Fri Aug 10 2018 Adam Williamson <awilliam@redhat.com> - 0.17.0-2
 - Backport fix that prevented anaconda running dnf in a subprocess (#546)
 

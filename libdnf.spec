@@ -23,7 +23,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.17.1
+Version:        0.17.2
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -215,13 +215,16 @@ popd
 %endif
 
 %changelog
+* Mon Aug 13 2018 Daniel Mach <dmach@redhat.com> - 0.17.2-1
+- [sqlite3] Change db locking mode to DEFAULT.
+- [doc] Add libsmartcols-devel to devel deps.
+
 * Mon Aug 13 2018 Daniel Mach <dmach@redhat.com> - 0.17.1-1
 - [module] Solve a problem in python constructor of NSVCAP if no version.
 - [translations] Update translations from zanata.
 - [transaction] Fix crash after using dnf.comps.CompsQuery and forking the process in Anaconda.
 - [module] Support for resetting module state.
 - [output] Introduce wrapper for smartcols.
-
 
 * Fri Aug 10 2018 Adam Williamson <awilliam@redhat.com> - 0.17.0-2
 - Backport fix that prevented anaconda running dnf in a subprocess (#546)

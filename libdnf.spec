@@ -23,7 +23,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.17.2
+Version:        0.19.0
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -51,6 +51,7 @@ BuildRequires:  pkgconfig(cppunit)
 BuildRequires:  pkgconfig(modulemd) >= %{libmodulemd_version}
 BuildRequires:  pkgconfig(smartcols)
 BuildRequires:  gettext
+BuildRequires:  gpgme-devel
 
 Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
 Requires:       libsolv%{?_isa} >= %{libsolv_version}
@@ -71,8 +72,13 @@ Development files for %{name}.
 Summary:        Python 2 bindings for the libdnf library.
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 BuildRequires:  python2-devel
+%if 0%{?rhel} == 7
+BuildRequires:  python-sphinx
+BuildRequires:  swig3 >= %{swig_version}
+%else
 BuildRequires:  python2-sphinx
 BuildRequires:  swig >= %{swig_version}
+%endif
 
 %description -n python2-%{name}
 Python 2 bindings for the libdnf library.
@@ -215,6 +221,13 @@ popd
 %endif
 
 %changelog
+* Fri Sep 07 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.19.0-1
+- [query] Reldeps can contain a space char (RhBug:1612462)
+- [transaction] Avoid adding duplicates via Transaction::addItem()
+- Fix compilation errors on gcc-4.8.5
+- [module] Make available ModuleProfile using SWIG
+- [module] Redesign module disable and reset
+
 * Mon Aug 13 2018 Daniel Mach <dmach@redhat.com> - 0.17.2-1
 - [sqlite3] Change db locking mode to DEFAULT.
 - [doc] Add libsmartcols-devel to devel deps.

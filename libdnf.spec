@@ -23,7 +23,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.19.0
+Version:        0.19.1
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -221,6 +221,10 @@ popd
 %endif
 
 %changelog
+* Mon Sep 10 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.19.1-1
+- Fix compilation errors on gcc-4.8.5
+- [module] Allow module queries on disabled modules
+
 * Fri Sep 07 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.19.0-1
 - [query] Reldeps can contain a space char (RhBug:1612462)
 - [transaction] Avoid adding duplicates via Transaction::addItem()

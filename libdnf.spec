@@ -24,7 +24,7 @@
 
 Name:           libdnf
 Version:        0.17.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -34,6 +34,9 @@ Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 # https://bugzilla.redhat.com/show_bug.cgi?id=1614511
 # https://github.com/rpm-software-management/libdnf/pull/546
 Patch0:         0001-transaction-Fix-crash-after-using-dnf.comps.CompsQue.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1626851
+Patch1:         0001-db-Don-t-crash-when-a-package-has-no-origin.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -219,6 +222,9 @@ popd
 %endif
 
 %changelog
+* Fri Aug 10 2018 Kalev Lember <klember@redhat.com> - 0.17.0-3
+- Backport a fix for a packagekit crasher / F29 Beta blocker (#1626851)
+
 * Fri Aug 10 2018 Adam Williamson <awilliam@redhat.com> - 0.17.0-2
 - Backport fix that prevented anaconda running dnf in a subprocess (#546)
 

@@ -24,7 +24,7 @@
 
 Name:           libdnf
 Version:        0.19.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -224,6 +224,9 @@ popd
 %endif
 
 %changelog
+* Fri Sep 14 2018 Kalev Lember <klember@redhat.com> - 0.19.1-2
+- Backport a fix for a packagekit crasher / F29 Beta blocker (#1626851)
+
 * Mon Sep 10 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.19.1-1
 - Fix compilation errors on gcc-4.8.5
 - [module] Allow module queries on disabled modules
@@ -245,9 +248,6 @@ popd
 - [transaction] Fix crash after using dnf.comps.CompsQuery and forking the process in Anaconda.
 - [module] Support for resetting module state.
 - [output] Introduce wrapper for smartcols.
-
-* Fri Aug 10 2018 Kalev Lember <klember@redhat.com> - 0.17.0-3
-- Backport a fix for a packagekit crasher / F29 Beta blocker (#1626851)
 
 * Fri Aug 10 2018 Adam Williamson <awilliam@redhat.com> - 0.17.0-2
 - Backport fix that prevented anaconda running dnf in a subprocess (#546)

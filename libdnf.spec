@@ -24,7 +24,7 @@
 
 Name:           libdnf
 Version:        0.19.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -32,6 +32,9 @@ Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1626851
 Patch1:         0001-db-Don-t-crash-when-a-package-has-no-origin.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=1629340
+# https://github.com/rpm-software-management/libdnf/pull/585
+Patch2:         585.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -224,6 +227,9 @@ popd
 %endif
 
 %changelog
+* Tue Sep 18 2018 Adam Williamson <awilliam@redhat.com> - 0.19.1-3
+- Backport PR #585 for an update crash bug (#1629340)
+
 * Fri Sep 14 2018 Kalev Lember <klember@redhat.com> - 0.19.1-2
 - Backport a fix for a packagekit crasher / F29 Beta blocker (#1626851)
 

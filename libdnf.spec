@@ -1,6 +1,6 @@
 %global libsolv_version 0.6.30-1
 %global libmodulemd_version 1.6.1
-%global dnf_conflict 3.0.0
+%global dnf_conflict 3.6.0
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -10,6 +10,13 @@
 %bcond_with python3
 %else
 %bcond_without python3
+%endif
+
+%if 0%{?rhel} > 7 || 0%{?fedora} > 29
+# Disable python2 build by default
+%bcond_with python2
+%else
+%bcond_without python2
 %endif
 
 %if 0%{?rhel} && ! 0%{?centos}
@@ -23,18 +30,12 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.19.1
-Release:        3%{?dist}
+Version:        0.20.0
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1626851
-Patch1:         0001-db-Don-t-crash-when-a-package-has-no-origin.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=1629340
-# https://github.com/rpm-software-management/libdnf/pull/585
-Patch2:         585.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -73,6 +74,7 @@ Requires:       libsolv-devel%{?_isa} >= %{libsolv_version}
 %description devel
 Development files for %{name}.
 
+%if %{with python2}
 %package -n python2-%{name}
 %{?python_provide:%python_provide python2-%{name}}
 Summary:        Python 2 bindings for the libdnf library.
@@ -88,7 +90,7 @@ BuildRequires:  swig >= %{swig_version}
 
 %description -n python2-%{name}
 Python 2 bindings for the libdnf library.
-
+%endif # with python2
 
 %if %{with python3}
 %package -n python3-%{name}
@@ -103,6 +105,7 @@ BuildRequires:  swig >= %{swig_version}
 Python 3 bindings for the libdnf library.
 %endif
 
+%if %{with python2}
 %package -n python2-hawkey
 Summary:        Python 2 bindings for the hawkey library
 %{?python_provide:%python_provide python2-hawkey}
@@ -121,6 +124,7 @@ Conflicts:      python-dnf < %{dnf_conflict}
 
 %description -n python2-hawkey
 Python 2 bindings for the hawkey library.
+%endif # with python2
 
 %if %{with python3}
 %package -n python3-hawkey
@@ -142,16 +146,20 @@ Python 3 bindings for the hawkey library.
 
 %prep
 %autosetup -p1
+%if %{with python2}
 mkdir build-py2
+%endif # with python2
 %if %{with python3}
 mkdir build-py3
 %endif
 
 %build
+%if %{with python2}
 pushd build-py2
   %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
+%endif # with python2
 
 %if %{with python3}
 pushd build-py3
@@ -169,9 +177,11 @@ ERROR
         exit 1
 fi
 
+%if %{with python2}
 pushd build-py2
   make ARGS="-V" test
 popd
+%endif # with python2
 %if %{with python3}
 # Run just the Python tests, not all of them, since
 # we have coverage of the core from the first build
@@ -181,9 +191,11 @@ popd
 %endif
 
 %install
+%if %{with python2}
 pushd build-py2
   %make_install
 popd
+%endif # with python2
 %if %{with python3}
 pushd build-py3
   %make_install
@@ -210,16 +222,20 @@ popd
 %{_libdir}/pkgconfig/%{name}.pc
 %{_includedir}/%{name}/
 
+%if %{with python2}
 %files -n python2-%{name}
 %{python2_sitearch}/%{name}/
+%endif # with python2
 
 %if %{with python3}
 %files -n python3-%{name}
 %{python3_sitearch}/%{name}/
 %endif
 
+%if %{with python2}
 %files -n python2-hawkey
 %{python2_sitearch}/hawkey/
+%endif # with python2
 
 %if %{with python3}
 %files -n python3-hawkey
@@ -227,6 +243,15 @@ popd
 %endif
 
 %changelog
+* Tue Sep 25 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.20.0-1
+- [module] Report module solver errors
+- [module] Enhance module commands and errors
+- [transaction] Fixed several problems with SWDB
+- Remove unneeded regex URL tests (RhBug:1598336)
+- Allow quoted values in ini files (RhBug:1624056)
+- Filter out not unique set of solver problems (RhBug:1564369)
+- Disable python2 build for Fedora 30+
+
 * Tue Sep 18 2018 Adam Williamson <awilliam@redhat.com> - 0.19.1-3
 - Backport PR #585 for an update crash bug (#1629340)
 

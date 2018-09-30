@@ -12,7 +12,7 @@
 %bcond_without python3
 %endif
 
-%if 0%{?rhel} > 7 || 0%{?fedora} > 29
+%if 0%{?rhel} > 7
 # Disable python2 build by default
 %bcond_with python2
 %else
@@ -31,7 +31,7 @@
 
 Name:           libdnf
 Version:        0.20.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -243,6 +243,9 @@ popd
 %endif
 
 %changelog
+* Sat Sep 29 2018 Kevin Fenzi <kevin@scrye.com> - 0.20.0-2
+- Temp re-enable python2 subpackages to get rawhide composing again.
+
 * Tue Sep 25 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.20.0-1
 - [module] Report module solver errors
 - [module] Enhance module commands and errors

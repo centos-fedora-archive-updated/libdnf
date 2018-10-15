@@ -1,6 +1,6 @@
 %global libsolv_version 0.6.30-1
 %global libmodulemd_version 1.6.1
-%global dnf_conflict 3.6.0
+%global dnf_conflict 3.7.1
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -30,8 +30,8 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.20.0
-Release:        2%{?dist}
+Version:        0.22.0
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -243,6 +243,15 @@ popd
 %endif
 
 %changelog
+* Mon Oct 15 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.0-1
+- Update to 0.22.0
+- Fix segfault in repo_internalize_trigger (RhBug:1375895)
+- Change sorting of installonly packages (RhBug:1627685)
+- [swdb] Fixed pattern searching in history db (RhBug:1635542)
+- Check correctly gpg for repomd when refresh is used (RhBug:1636743)
+- [conf] Provide additional VectorString methods for compatibility with Python list.
+- [plugins] add plugin loading and hooks into libdnf
+
 * Sat Sep 29 2018 Kevin Fenzi <kevin@scrye.com> - 0.20.0-2
 - Temp re-enable python2 subpackages to get rawhide composing again.
 

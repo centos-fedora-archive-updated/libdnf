@@ -31,11 +31,13 @@
 
 Name:           libdnf
 Version:        0.22.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch0001:      0001-Modify-solver_describe_decision-to-report-cleaned-RhBug1486749.patch
+Patch0002:      0002-history-Fix-crash-in-TransactionItemaddReplacedBy.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -243,6 +245,10 @@ popd
 %endif
 
 %changelog
+* Wed Oct 15 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.0-2
+- backport Modify-solver_describe_decision-to-report-cleaned-RhBug1486749
+- backport history-Fix-crash-in-TransactionItemaddReplacedBy
+
 * Mon Oct 15 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.0-1
 - Update to 0.22.0
 - Fix segfault in repo_internalize_trigger (RhBug:1375895)

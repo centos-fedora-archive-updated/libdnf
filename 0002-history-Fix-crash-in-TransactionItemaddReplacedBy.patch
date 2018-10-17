@@ -1,0 +1,25 @@
+From cc7776ba7e33770ad5744a67d32b03aaece992f8 Mon Sep 17 00:00:00 2001
+From: Daniel Mach <dmach@redhat.com>
+Date: Wed, 17 Oct 2018 12:12:18 +0200
+Subject: [PATCH] [history] Fix crash in TransactionItem::addReplacedBy().
+
+---
+ libdnf/transaction/TransactionItem.hpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libdnf/transaction/TransactionItem.hpp b/libdnf/transaction/TransactionItem.hpp
+index dc4e2c8..72684f7 100644
+--- a/libdnf/transaction/TransactionItem.hpp
++++ b/libdnf/transaction/TransactionItem.hpp
+@@ -110,7 +110,7 @@ public:
+     // int64_t getTransactionId() const noexcept { return trans.getId(); }
+ 
+     const std::vector< TransactionItemPtr > &getReplacedBy() const noexcept { return replacedBy; }
+-    void addReplacedBy(TransactionItemPtr value) { replacedBy.push_back(value); }
++    void addReplacedBy(TransactionItemPtr value) { if (value) replacedBy.push_back(value); }
+ 
+     void save();
+     void saveReplacedBy();
+--
+libgit2 0.26.6
+

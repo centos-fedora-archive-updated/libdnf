@@ -1,0 +1,30 @@
+From 1e7118d01d9ba92f759cd9669f9d0dd5af0619d6 Mon Sep 17 00:00:00 2001
+From: Jaroslav Mracek <jmracek@redhat.com>
+Date: Sat, 20 Oct 2018 01:13:49 +0200
+Subject: [PATCH] Test if sack is present and run save module persistor (RhBug:1632518)
+
+---
+ libdnf/dnf-transaction.cpp | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/libdnf/dnf-transaction.cpp b/libdnf/dnf-transaction.cpp
+index 0d948d7..b89eace 100644
+--- a/libdnf/dnf-transaction.cpp
++++ b/libdnf/dnf-transaction.cpp
+@@ -1437,8 +1437,11 @@ dnf_transaction_commit(DnfTransaction *transaction, HyGoal goal, DnfState *state
+             goto out;
+     }
+ 
+-    if (auto moduleContainer = dnf_sack_get_module_container(dnf_context_get_sack(priv->context)))
+-        moduleContainer->save();
++    if (DnfSack * sack = hy_goal_get_sack(goal)) {
++        if (auto moduleContainer = dnf_sack_get_module_container(sack)) {
++            moduleContainer->save();
++        }
++    }
+ 
+     /* all sacks are invalid now */
+     dnf_context_invalidate_full(priv->context,
+--
+libgit2 0.26.7
+

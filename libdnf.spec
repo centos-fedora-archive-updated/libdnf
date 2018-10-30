@@ -31,7 +31,7 @@
 
 Name:           libdnf
 Version:        0.22.0
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -248,6 +248,9 @@ popd
 %endif
 
 %changelog
+* Tue Oct 30 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.22.0-7
+- Rebuild for libsolv 0.7
+
 * Tue Oct 23 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.0-6
 - Add patch Relocate-ModuleContainer-save-hook-RhBug1632518
 - Add patch Test-if-sack-is-present-and-run-save-module-persistor-RhBug1632518

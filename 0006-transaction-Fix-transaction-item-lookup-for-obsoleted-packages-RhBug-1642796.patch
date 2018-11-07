@@ -1,0 +1,26 @@
+From b2d35e9b7168c572320444e5b1e831def7e5b065 Mon Sep 17 00:00:00 2001
+From: Daniel Mach <dmach@redhat.com>
+Date: Tue, 6 Nov 2018 14:31:38 +0100
+Subject: [PATCH] [transaction] Fix transaction item lookup for obsoleted packages (RhBug: 1642796)
+
+---
+ libdnf/dnf-transaction.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/libdnf/dnf-transaction.cpp b/libdnf/dnf-transaction.cpp
+index b89eace..2aed9a9 100644
+--- a/libdnf/dnf-transaction.cpp
++++ b/libdnf/dnf-transaction.cpp
+@@ -713,6 +713,9 @@ dnf_transaction_ts_progress_cb(const void *arg,
+         case RPMCALLBACK_UNINST_STOP:
+ 
+             pkg = dnf_find_pkg_from_header(priv->remove, hdr);
++            if (pkg == NULL) {
++                pkg = dnf_find_pkg_from_header(priv->remove_helper, hdr);
++            }
+             if (pkg == NULL && filename != NULL) {
+                 pkg = dnf_find_pkg_from_filename_suffix(priv->remove, filename);
+             }
+--
+libgit2 0.26.7
+

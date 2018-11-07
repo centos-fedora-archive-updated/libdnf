@@ -31,7 +31,7 @@
 
 Name:           libdnf
 Version:        0.22.0
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -41,6 +41,7 @@ Patch0002:      0002-history-Fix-crash-in-TransactionItemaddReplacedBy.patch
 Patch0003:      0003-swdb-create-persistent-WAL-files-RhBug1640235.patch
 Patch0004:      0004-Relocate-ModuleContainer-save-hook-RhBug1632518.patch
 Patch0005:      0005-Test-if-sack-is-present-and-run-save-module-persistor-RhBug1632518.patch
+Patch0006:      0006-transaction-Fix-transaction-item-lookup-for-obsoleted-packages-RhBug-1642796.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -248,6 +249,9 @@ popd
 %endif
 
 %changelog
+* Wed Nov 07 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.0-7
+- Backport fixes for RHBZ#1642796 from upstream master
+
 * Tue Oct 30 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.22.0-7
 - Rebuild for libsolv 0.7
 

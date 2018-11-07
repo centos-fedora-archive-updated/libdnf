@@ -249,7 +249,7 @@ popd
 %endif
 
 %changelog
-* Wed Nov 07 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.0-7
+* Wed Nov 07 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.0-8
 - Backport fixes for RHBZ#1642796 from upstream master
 
 * Tue Oct 30 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.22.0-7

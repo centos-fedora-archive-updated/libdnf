@@ -29,11 +29,14 @@
 
 Name:           libdnf
 Version:        0.11.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch0001:      0001-Use-arch-from-spec-in-hy_subject_get_best_selector-RhBug1542307.patch
+Patch0002:      0002-Fix-segfault-in-repo_internalize_trigger-RhBug1375895.patch
+Patch0003:      0003-Fix-memory-corruption-in-dnf_context.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -238,6 +241,9 @@ popd
 %endif
 
 %changelog
+* Thu Nov 08 2018 aroslav Mracek <jmracek@redhat.com> - 0.11.1-2
+- Backport patches from upstream libdnf-0.11.1
+
 * Mon Oct 16 2017 Jaroslav Mracek <jmracek@redhat.com> - 0.11.1-1
 - Rerelease of 0.11.1-1
 - Improvement query performance

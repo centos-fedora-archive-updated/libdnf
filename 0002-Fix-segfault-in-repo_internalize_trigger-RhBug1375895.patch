@@ -1,0 +1,53 @@
+From 685aba997538fc5041640becb38b8f154b3a6b6d Mon Sep 17 00:00:00 2001
+From: Jaroslav Mracek <jmracek@redhat.com>
+Date: Thu, 8 Nov 2018 20:52:44 +0100
+Subject: [PATCH] Fix segfault in repo_internalize_trigger (RhBug:1375895)
+
+---
+ libdnf/hy-package.c |  4 +---
+ libdnf/hy-repo.c    | 14 ++++++++------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/libdnf/hy-package.c b/libdnf/hy-package.c
+index 3f9beed..890267c 100644
+--- a/libdnf/hy-package.c
++++ b/libdnf/hy-package.c
+@@ -351,9 +351,7 @@ const char *
+ dnf_package_get_location(DnfPackage *pkg)
+ {
+     Solvable *s = get_solvable(pkg);
+-    if (s->repo) {
+-        repo_internalize_trigger(s->repo);
+-    }
++    repo_internalize_trigger(s->repo);
+     return solvable_get_location(s, NULL);
+ }
+ 
+diff --git a/libdnf/hy-repo.c b/libdnf/hy-repo.c
+index e816ea8..eb5e168 100644
+--- a/libdnf/hy-repo.c
++++ b/libdnf/hy-repo.c
+@@ -55,12 +55,14 @@ repo_internalize_all_trigger(Pool *pool)
+ void
+ repo_internalize_trigger(Repo * repo)
+ {
+-    HyRepo hrepo = repo->appdata;
+-    assert(hrepo->libsolv_repo == repo);
+-    if (!hrepo->needs_internalizing)
+-        return;
+-    hrepo->needs_internalizing = 0;
+-    repo_internalize(repo);
++    if (repo) {
++        HyRepo hrepo = repo->appdata;
++        assert(hrepo->libsolv_repo == repo);
++        if (!hrepo->needs_internalizing)
++            return;
++        hrepo->needs_internalizing = 0;
++        repo_internalize(repo);
++    }
+ }
+ 
+ void
+--
+libgit2 0.26.7
+

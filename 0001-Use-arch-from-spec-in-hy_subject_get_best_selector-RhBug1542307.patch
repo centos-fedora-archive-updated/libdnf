@@ -1,0 +1,26 @@
+From 04cb64836deabf398ccdbf671be9a83837309c57 Mon Sep 17 00:00:00 2001
+From: Jaroslav Mracek <jmracek@redhat.com>
+Date: Tue, 2 Oct 2018 16:59:32 +0200
+Subject: [PATCH] Use arch from spec in hy_subject_get_best_selector (RhBug:1542307)
+
+---
+ libdnf/hy-subject.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/libdnf/hy-subject.c b/libdnf/hy-subject.c
+index 488ee6a..b72f4b5 100644
+--- a/libdnf/hy-subject.c
++++ b/libdnf/hy-subject.c
+@@ -382,6 +382,9 @@ nevra_to_selector(HyNevra nevra, DnfSack *sack)
+                 hy_selector_set(selector, HY_PKG_EVR, HY_EQ, evrbuf->str);
+             }
+         }
++        const char * arch = hy_nevra_get_string(nevra, HY_NEVRA_ARCH);
++        if (arch)
++            hy_selector_set(selector, HY_PKG_ARCH, HY_EQ, arch);
+     }
+ 
+     if (hy_selector_has_matches(selector)) {
+--
+libgit2 0.26.7
+

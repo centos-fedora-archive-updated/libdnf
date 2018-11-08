@@ -1,0 +1,24 @@
+From ffd5afadb63969f3e6eca781cf2084f5343d2589 Mon Sep 17 00:00:00 2001
+From: Jaroslav Mracek <jmracek@redhat.com>
+Date: Thu, 8 Nov 2018 20:56:58 +0100
+Subject: [PATCH] Fix memory corruption in dnf_context
+
+---
+ libdnf/dnf-sack.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libdnf/dnf-sack.c b/libdnf/dnf-sack.c
+index 66c96c9..ab616d8 100644
+--- a/libdnf/dnf-sack.c
++++ b/libdnf/dnf-sack.c
+@@ -112,6 +112,7 @@ dnf_sack_finalize(GObject *object)
+         HyRepo hrepo = repo->appdata;
+         if (!hrepo)
+             continue;
++        hrepo->libsolv_repo = NULL;
+         hy_repo_free(hrepo);
+     }
+     g_free(priv->cache_dir);
+--
+libgit2 0.26.7
+

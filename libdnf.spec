@@ -1,6 +1,6 @@
-%global libsolv_version 0.6.30-1
+%global libsolv_version 0.6.35-1
 %global libmodulemd_version 1.6.1
-%global dnf_conflict 3.7.1
+%global dnf_conflict 4.0.9
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -12,7 +12,7 @@
 %bcond_without python3
 %endif
 
-%if 0%{?rhel} > 7
+%if 0%{?rhel} > 7 || 0%{?fedora} > 29
 # Disable python2 build by default
 %bcond_with python2
 %else
@@ -30,18 +30,12 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.22.0
-Release:        8%{?dist}
+Version:        0.22.3
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-Patch0001:      0001-Modify-solver_describe_decision-to-report-cleaned-RhBug1486749.patch
-Patch0002:      0002-history-Fix-crash-in-TransactionItemaddReplacedBy.patch
-Patch0003:      0003-swdb-create-persistent-WAL-files-RhBug1640235.patch
-Patch0004:      0004-Relocate-ModuleContainer-save-hook-RhBug1632518.patch
-Patch0005:      0005-Test-if-sack-is-present-and-run-save-module-persistor-RhBug1632518.patch
-Patch0006:      0006-transaction-Fix-transaction-item-lookup-for-obsoleted-packages-RhBug-1642796.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -249,6 +243,16 @@ popd
 %endif
 
 %changelog
+* Thu Nov 22 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.3-1
+- Permanently disable Python2 build for Fedora 30+
+- Update to 0.22.3
+- Modify solver_describe_decision to report cleaned (RhBug:1486749)
+- [swdb] create persistent WAL files (RhBug:1640235)
+- Relocate ModuleContainer save hook (RhBug:1632518)
+- [transaction] Fix transaction item lookup for obsoleted packages (RhBug: 1642796)
+- Fix memory leaks and memory allocations
+- [repo] Possibility to extend downloaded repository metadata
+
 * Wed Nov 07 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.0-8
 - Backport fixes for RHBZ#1642796 from upstream master
 

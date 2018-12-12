@@ -38,7 +38,7 @@
 
 Name:           libdnf
 Version:        0.35.1
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -75,7 +75,7 @@ BuildRequires:  pkgconfig(smartcols)
 BuildRequires:  gettext
 BuildRequires:  gpgme-devel
 
-Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
+Requires:       libmodulemd1%{?_isa} >= %{libmodulemd_version}
 Requires:       libsolv%{?_isa} >= %{libsolv_version}
 Requires:       librepo%{?_isa} >= %{librepo_version}
 
@@ -260,6 +260,9 @@ popd
 %endif
 
 %changelog
+* Wed Jul 31 2019 Stephen Gallagher <sgallagh@redhat.com> - 0.35.1-5
+- Update libmodulemd dependency
+
 * Mon Jul 29 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-4
 - Rebuilt for librepo 1.10.5
 

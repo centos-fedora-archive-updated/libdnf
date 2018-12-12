@@ -1,6 +1,6 @@
 %global libsolv_version 0.6.35-1
 %global libmodulemd_version 1.6.1
-%global dnf_conflict 4.0.9
+%global dnf_conflict 4.0.10
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -30,7 +30,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.22.3
+Version:        0.24.1
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -55,6 +55,7 @@ BuildRequires:  pkgconfig(librhsm) >= 0.0.3
 BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)
 BuildRequires:  pkgconfig(cppunit)
+BuildRequires:  pkgconfig(libcrypto)
 BuildRequires:  pkgconfig(modulemd) >= %{libmodulemd_version}
 BuildRequires:  pkgconfig(smartcols)
 BuildRequires:  gettext
@@ -215,6 +216,7 @@ popd
 %license COPYING
 %doc README.md AUTHORS
 %{_libdir}/%{name}.so.*
+%{_libdir}/libdnf/plugins/README
 
 %files devel
 %doc %{_datadir}/gtk-doc/html/%{name}/
@@ -243,6 +245,16 @@ popd
 %endif
 
 %changelog
+* Wed Dec 12 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.24.1-1
+- Update to 0.24.1
+- Add support for zchunk
+- Enhance LIBDNF plugins support
+- Enhance sorting for module list (RhBug:1590358)
+- [repo] Check whether metadata cache is expired (RhBug:1539620,1648274)
+- [DnfRepo] Add methods for alternative repository metadata type and download (RhBug:1656314)
+- Remove installed profile on module  enable or disable (RhBug:1653623)
+- [sack] Implement dnf_sack_get_rpmdb_version()
+
 * Thu Nov 22 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.22.3-1
 - Permanently disable Python2 build for Fedora 30+
 - Update to 0.22.3

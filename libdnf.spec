@@ -31,7 +31,7 @@
 
 Name:           libdnf
 Version:        0.24.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -245,6 +245,9 @@ popd
 %endif
 
 %changelog
+* Fri Feb 01 2019 Fedora Release Engineering <releng@fedoraproject.org> - 0.24.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
+
 * Wed Dec 12 2018 Jaroslav Mracek <jmracek@redhat.com> - 0.24.1-1
 - Update to 0.24.1
 - Add support for zchunk

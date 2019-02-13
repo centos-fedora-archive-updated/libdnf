@@ -1,6 +1,6 @@
 %global libsolv_version 0.6.35-1
 %global libmodulemd_version 1.6.1
-%global dnf_conflict 4.0.10
+%global dnf_conflict 4.1.0
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -30,12 +30,13 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.24.1
-Release:        2%{?dist}
+Version:        0.26.0
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -245,6 +246,12 @@ popd
 %endif
 
 %changelog
+* Wed Feb 13 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.26.0-1
+- Update to 0.26.0-1
+- Enhance modular solver to handle enabled and default module streams differently (RhBug:1648839)
+- Add support of wild cards for modules (RhBug:1644588)
+- Revert commit that adds best as default behavior
+
 * Fri Feb 01 2019 Fedora Release Engineering <releng@fedoraproject.org> - 0.24.1-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 

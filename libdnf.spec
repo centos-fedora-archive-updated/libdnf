@@ -31,12 +31,14 @@
 
 Name:           libdnf
 Version:        0.26.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
+Patch0002:      0002-Zchunk-configuration-flags-were-backwards-so-setting-zchunkfalse-would.patch
+Patch0003:      0003-hy_repos-werent-being-filled-properly-when-using-zchunk-metadata-so-this.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -246,6 +248,9 @@ popd
 %endif
 
 %changelog
+* Tue Feb 19 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.26.0-2
+- Backport patches for zchunk
+
 * Wed Feb 13 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.26.0-1
 - Update to 0.26.0-1
 - Enhance modular solver to handle enabled and default module streams differently (RhBug:1648839)

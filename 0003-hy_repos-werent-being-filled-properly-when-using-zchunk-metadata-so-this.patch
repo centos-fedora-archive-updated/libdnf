@@ -1,0 +1,90 @@
+From d5e661a8eae27fb6108f54d924ac0af709696c60 Mon Sep 17 00:00:00 2001
+From: Jonathan Dieter <jdieter@gmail.com>
+Date: Sat, 22 Dec 2018 17:01:13 +0000
+Subject: [PATCH] hy_repos weren't being filled properly when using zchunk metadata, so this
+
+---
+ libdnf/dnf-repo.cpp  | 35 +++++++++++++++++++++++++++--------
+ libdnf/repo/Repo.cpp | 17 ++++++++++++++++-
+ 2 files changed, 43 insertions(+), 9 deletions(-)
+
+diff --git a/libdnf/dnf-repo.cpp b/libdnf/dnf-repo.cpp
+index 1cf762b..3357af2 100644
+--- a/libdnf/dnf-repo.cpp
++++ b/libdnf/dnf-repo.cpp
+@@ -1439,14 +1439,33 @@ dnf_repo_check_internal(DnfRepo *repo,
+         hy_repo_free(priv->repo);
+     priv->repo = hy_repo_create(priv->id);
+     hy_repo_set_string(priv->repo, HY_REPO_MD_FN, yum_repo->repomd);
+-    tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "primary"));
+-    hy_repo_set_string(priv->repo, HY_REPO_PRIMARY_FN, tmp);
+-    tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "filelists"));
+-    hy_repo_set_string(priv->repo, HY_REPO_FILELISTS_FN, tmp);
+-    tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "updateinfo"));
+-    hy_repo_set_string(priv->repo, HY_REPO_UPDATEINFO_FN, tmp);
+-    tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "modules"));
+-    hy_repo_set_string(priv->repo, MODULES_FN, tmp);
++    if (dnf_context_get_zchunk(priv->context)) {
++        tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "primary_zck"));
++        if(!tmp)
++            tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "primary"));
++        hy_repo_set_string(priv->repo, HY_REPO_PRIMARY_FN, tmp);
++        tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "filelists_zck"));
++        if(!tmp)
++            tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "filelists"));
++        hy_repo_set_string(priv->repo, HY_REPO_FILELISTS_FN, tmp);
++        tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "updateinfo_zck"));
++        if(!tmp)
++            tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "updateinfo"));
++        hy_repo_set_string(priv->repo, HY_REPO_UPDATEINFO_FN, tmp);
++        tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "modules_zck"));
++        if(!tmp)
++            tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "modules"));
++        hy_repo_set_string(priv->repo, MODULES_FN, tmp);
++    } else {
++        tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "primary"));
++        hy_repo_set_string(priv->repo, HY_REPO_PRIMARY_FN, tmp);
++        tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "filelists"));
++        hy_repo_set_string(priv->repo, HY_REPO_FILELISTS_FN, tmp);
++        tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "updateinfo"));
++        hy_repo_set_string(priv->repo, HY_REPO_UPDATEINFO_FN, tmp);
++        tmp = static_cast<const gchar *>(g_hash_table_lookup(priv->filenames_md, "modules"));
++        hy_repo_set_string(priv->repo, MODULES_FN, tmp);
++    }
+ 
+     /* ensure we reset the values from the keyfile */
+     if (!dnf_repo_set_keyfile_data(repo, error))
+diff --git a/libdnf/repo/Repo.cpp b/libdnf/repo/Repo.cpp
+index 7c0e464..98279e6 100644
+--- a/libdnf/repo/Repo.cpp
++++ b/libdnf/repo/Repo.cpp
+@@ -275,10 +275,25 @@ private:
+             delete[] *item;
+         delete[] ptr;
+     }};
++    bool endsWith(std::string const &str, std::string const &ending) const;
+ };
+ 
++bool Repo::Impl::endsWith(const std::string &str, const std::string &ending) const {
++    if (str.length() >= ending.length())
++        return (str.compare(str.length() - ending.length(), ending.length(), ending) == 0);
++    else
++        return false;
++}
++
+ std::string Repo::Impl::getMetadataPath(const std::string &metadataType) const {
+-    auto it = metadataPaths.find(metadataType);
++    std::string lookupMetadataType = metadataType;
++    if (conf->getMasterConfig().zchunk().getValue()) {
++        if(!endsWith(metadataType, "_zck"))
++            lookupMetadataType = metadataType + "_zck";
++    }
++    auto it = metadataPaths.find(lookupMetadataType);
++    if(it == metadataPaths.end() && lookupMetadataType != metadataType)
++        it = metadataPaths.find(metadataType);
+     return (it != metadataPaths.end()) ? it->second : "";
+ }
+ 
+--
+libgit2 0.27.7
+

@@ -1,5 +1,6 @@
 %global libsolv_version 0.6.35-1
 %global libmodulemd_version 1.6.1
+%global librepo_version 1.9.5
 %global dnf_conflict 4.1.0
 %global swig_version 3.0.12
 
@@ -30,7 +31,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.26.0
+Version:        0.28.0
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -42,7 +43,7 @@ BuildRequires:  cmake
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
 BuildRequires:  libsolv-devel >= %{libsolv_version}
-BuildRequires:  pkgconfig(librepo)
+BuildRequires:  pkgconfig(librepo) >= %{librepo_version}
 BuildRequires:  pkgconfig(check)
 %if %{with valgrind}
 BuildRequires:  valgrind
@@ -64,6 +65,7 @@ BuildRequires:  gpgme-devel
 
 Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
 Requires:       libsolv%{?_isa} >= %{libsolv_version}
+Requires:       librepo%{?_isa} >= %{librepo_version}
 
 %description
 A Library providing simplified C and Python API to libsolv.
@@ -246,6 +248,13 @@ popd
 %endif
 
 %changelog
+* Mon Mar 11 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.28.0-1
+- Update to 0.28.0
+- Exclude module pkgs that have conflict
+- Enhance config parser to preserve order of data, and keep comments and format
+- Improve ARM detection
+- Add support for SHA-384
+
 * Wed Feb 13 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.26.0-1
 - Update to 0.26.0-1
 - Enhance modular solver to handle enabled and default module streams differently (RhBug:1648839)

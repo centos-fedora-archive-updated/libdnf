@@ -31,7 +31,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.28.0
+Version:        0.28.1
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -248,6 +248,13 @@ popd
 %endif
 
 %changelog
+* Wed Mar 27 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.28.1-1
+- Update to 0.28.1
+- Return empty query if incorrect reldep (RhBug:1687135)
+- ConfigParser: Improve compatibility with Python ConfigParser and dnf-plugin-spacewalk (RhBug:1692044)
+- ConfigParser: Unify default set of string represenation of boolean values
+- Fix segfault when interrupting dnf process (RhBug:1610456)
+
 * Mon Mar 11 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.28.0-1
 - Update to 0.28.0
 - Exclude module pkgs that have conflict

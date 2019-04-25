@@ -1,7 +1,7 @@
-%global libsolv_version 0.6.35-1
+%global libsolv_version 0.7.4-1
 %global libmodulemd_version 1.6.1
 %global librepo_version 1.9.5
-%global dnf_conflict 4.1.0
+%global dnf_conflict 4.2.5
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -31,7 +31,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.28.1
+Version:        0.31.0
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -248,6 +248,14 @@ popd
 %endif
 
 %changelog
+* Thu Apr 25 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-1
+- Update to 0.31.0
+- Installroot now requires absolute path
+- Support "_none_" value for repo option "proxy" (RhBug:1680272)
+- Add support for Module advisories
+- Add support for xml:base attribute from primary.xml (RhBug:1691315)
+- Improve detection of Platform ID (RhBug:1688462)
+
 * Wed Mar 27 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.28.1-1
 - Update to 0.28.1
 - Return empty query if incorrect reldep (RhBug:1687135)

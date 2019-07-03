@@ -1,6 +1,6 @@
 %global libsolv_version 0.7.4-1
 %global libmodulemd_version 1.6.1
-%global librepo_version 1.9.5
+%global librepo_version 1.10.0
 %global dnf_conflict 4.2.5
 %global swig_version 3.0.12
 
@@ -11,6 +11,12 @@
 %bcond_with python3
 %else
 %bcond_without python3
+%endif
+
+%if 0%{?rhel}
+    %global rpm_version 4.14.2
+%else
+    %global rpm_version 4.14.2.1-4
 %endif
 
 %if 0%{?rhel} > 7 || 0%{?fedora} > 29
@@ -31,16 +37,16 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.31.0
-Release:        5%{?dist}
+Version:        0.35.1
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
-Patch0002:      0002-Reintroduce-hawkeyRepo-deprecated-for-compatibility.patch
-Patch0003:      0003-hawkeyRepo-add-deprecation-message.patch
-Patch0004:      0004-Unit-tests-for-reintroduced-hawkeyRepo.patch
+# Temporary patch to not fail on modular RPMs without modular metadata
+# until the infrastructure is ready
+Patch0002:      0002-Revert-consequences-of-Fail-Safe-mechanism.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -53,7 +59,7 @@ BuildRequires:  valgrind
 %endif
 BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.46.0
 BuildRequires:  pkgconfig(gtk-doc)
-BuildRequires:  rpm-devel >= 4.11.0
+BuildRequires:  rpm-devel >= %{rpm_version}
 %if %{with rhsm}
 BuildRequires:  pkgconfig(librhsm) >= 0.0.3
 %endif
@@ -251,13 +257,32 @@ popd
 %endif
 
 %changelog
+* Thu Jul 04 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-1
+- Update to 0.35.1
+- Enhance logging handling
+- Do not log DEBUG messages by default
+- Also add subkeys when adding GPG keys
+- [module] Fix swig binding for getModuleDependencies()
+- Skip invalid key files in "/etc/pki/rpm-gpg" with warning (RhBug:1644040)
+- Enable timestamp preserving for downloaded data (RhBug:1688537)
+- Set default to skip_if_unavailable=false (RhBug:1679509)
+- Add configuration option skip_if_unavailable (RhBug:1689931)
+- Fix 'database is locked' error (RhBug:1631533)
+- Replace the 'Failed to synchronize cache' message (RhBug:1712055)
+- Fix 'no such table: main.trans_cmdline' error (RhBug:1596540)
+- Add support of modular FailSafe (RhBug:1623128) (temporarily with warnings
+  instead of errors when installing modular RPMs without modular metadata)
+- Add support of DNF main config file in context; used by PackageKit and
+  microdnf (RhBug:1689331)
+- Exit gpg-agent after repokey import (RhBug:1650266)
+
 * Mon Jun 10 22:13:19 CET 2019 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.31.0-5
 - Rebuild for RPM 4.15
 
 * Mon Jun 10 15:42:02 CET 2019 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.31.0-4
 - Rebuild for RPM 4.15
 
-* Thu May 03 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-3
+* Fri May 03 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-3
 - Backport patches to reintroduce hawkeyRepo
 
 * Thu Apr 25 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-1

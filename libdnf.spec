@@ -32,7 +32,7 @@
 
 Name:           libdnf
 Version:        0.31.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -41,6 +41,10 @@ Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 Patch0002:      0002-Reintroduce-hawkeyRepo-deprecated-for-compatibility.patch
 Patch0003:      0003-hawkeyRepo-add-deprecation-message.patch
 Patch0004:      0004-Unit-tests-for-reintroduced-hawkeyRepo.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=1355764#c50
+Patch0005:      0005-Set-relevant-g_log-domain-handlers-instead-of-a-default-one.patch
+Patch0006:      0006-Add-a-debug-argument-to-LibrepologaddHandler.patch
+Patch0007:      0007-Add-a-logdebug-argument-to-hawkeySack.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -251,7 +255,10 @@ popd
 %endif
 
 %changelog
-* Thu May 03 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-3
+* Wed Jul 24 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-4
+- Backport patches to not log DEBUG messages by default (RhBug:1355764)
+
+* Fri May 03 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-3
 - Backport patches to reintroduce hawkeyRepo
 
 * Thu Apr 25 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-1

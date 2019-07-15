@@ -1,0 +1,69 @@
+From 6f8175f53f868e9c3c865c5d5dab5d49682f21e2 Mon Sep 17 00:00:00 2001
+From: Lukáš Hrázký <lhrazky@redhat.com>
+Date: Wed, 27 Mar 2019 15:08:59 +0100
+Subject: [PATCH] Add a debug argument to Librepolog::addHandler
+
+---
+ libdnf.spec          |  2 +-
+ libdnf/repo/Repo.cpp | 11 +++++++++--
+ libdnf/repo/Repo.hpp |  2 +-
+ 3 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/libdnf.spec b/libdnf.spec
+index 1a39f3e..aa09f49 100644
+--- a/libdnf.spec
++++ b/libdnf.spec
+@@ -31,7 +31,7 @@
+     %{nil}
+ 
+ Name:           libdnf
+-Version:        0.31.0
++Version:        0.32.0
+ Release:        1%{?dist}
+ Summary:        Library providing simplified C and Python API to libsolv
+ License:        LGPLv2+
+diff --git a/libdnf/repo/Repo.cpp b/libdnf/repo/Repo.cpp
+index d75e75a..ea6a350 100644
+--- a/libdnf/repo/Repo.cpp
++++ b/libdnf/repo/Repo.cpp
+@@ -1724,7 +1724,7 @@ static void librepoLogCB(G_GNUC_UNUSED const gchar *log_domain, GLogLevelFlags l
+     }
+ }
+ 
+-long LibrepoLog::addHandler(const std::string & filePath)
++long LibrepoLog::addHandler(const std::string & filePath, bool debug)
+ {
+     static long uid = 0;
+ 
+@@ -1739,7 +1739,14 @@ long LibrepoLog::addHandler(const std::string & filePath)
+     data->fd = fd;
+ 
+     // Set handler
+-    data->handlerId = g_log_set_handler(LR_LOGDOMAIN, G_LOG_LEVEL_MASK, librepoLogCB, data.get());
++    GLogLevelFlags log_mask = debug ? G_LOG_LEVEL_MASK : static_cast<GLogLevelFlags>(
++        G_LOG_LEVEL_INFO |
++        G_LOG_LEVEL_MESSAGE |
++        G_LOG_LEVEL_WARNING |
++        G_LOG_LEVEL_CRITICAL |
++        G_LOG_LEVEL_ERROR);
++
++    data->handlerId = g_log_set_handler(LR_LOGDOMAIN, log_mask, librepoLogCB, data.get());
+     data->used = true;
+ 
+     // Save user data (in a thread safe way)
+diff --git a/libdnf/repo/Repo.hpp b/libdnf/repo/Repo.hpp
+index 8211136..35027a3 100644
+--- a/libdnf/repo/Repo.hpp
++++ b/libdnf/repo/Repo.hpp
+@@ -338,7 +338,7 @@ private:
+ 
+ struct LibrepoLog {
+ public:
+-    static long addHandler(const std::string & filePath);
++    static long addHandler(const std::string & filePath, bool debug = false);
+     static void removeHandler(long uid);
+     static void removeAllHandlers();
+ };
+--
+libgit2 0.27.8
+

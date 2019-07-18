@@ -38,7 +38,7 @@
 
 Name:           libdnf
 Version:        0.35.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -47,6 +47,9 @@ Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 # Temporary patch to not fail on modular RPMs without modular metadata
 # until the infrastructure is ready
 Patch0002:      0002-Revert-consequences-of-Fail-Safe-mechanism.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=1727343
+# https://bugzilla.redhat.com/show_bug.cgi?id=1727424
+Patch0003:      0003-Fix-attaching-and-detaching-of-libsolvRepo.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -257,6 +260,10 @@ popd
 %endif
 
 %changelog
+* Mon Jul 22 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-2
+- Backport patch to fix attaching and detaching of libsolvRepo and
+  repo_internalize_trigger() (RhBug:1727343,1727424)
+
 * Thu Jul 04 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-1
 - Update to 0.35.1
 - Enhance logging handling

@@ -32,7 +32,7 @@
 
 Name:           libdnf
 Version:        0.31.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -255,6 +255,9 @@ popd
 %endif
 
 %changelog
+* Tue Jul 30 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-5
+- Rebuilt for librepo 1.10.5
+
 * Wed Jul 24 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.31.0-4
 - Backport patches to not log DEBUG messages by default (RhBug:1355764)
 

@@ -1,0 +1,37 @@
+From 38e18dc883fc9ca1e1d2fed815d74071415c4574 Mon Sep 17 00:00:00 2001
+From: Daniel Mach <dmach@redhat.com>
+Date: Sun, 2 Jun 2019 06:34:21 +0200
+Subject: [PATCH] [sqlite3] Fix 'database is locked' error by setting busy timeout correctly.
+
+RhBug:1631533
+---
+ libdnf/utils/sqlite3/Sqlite3.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/libdnf/utils/sqlite3/Sqlite3.cpp b/libdnf/utils/sqlite3/Sqlite3.cpp
+index 61a0ed6..417e890 100644
+--- a/libdnf/utils/sqlite3/Sqlite3.cpp
++++ b/libdnf/utils/sqlite3/Sqlite3.cpp
+@@ -30,6 +30,11 @@ SQLite3::open()
+             sqlite3_close(db);
+             throw LibException(result, "Open failed");
+         }
++
++        // the busy timeout must be set before executing *any* statements
++        // because even setting PRAGMAs can fail with "database is locked" error
++        sqlite3_busy_timeout(db, 10000);
++
+ #if SQLITE_VERSION_NUMBER >= 3022000
+         int enabled = 1;
+         sqlite3_file_control(db, "main", SQLITE_FCNTL_PERSIST_WAL, &enabled);
+@@ -41,7 +46,6 @@ SQLite3::open()
+         // Journal mode WAL in readonly mode is supported from sqlite version 3.22.0
+         exec("PRAGMA locking_mode = NORMAL; PRAGMA journal_mode = TRUNCATE; PRAGMA foreign_keys = ON;");
+ #endif
+-        sqlite3_busy_timeout(db, 10000);
+     }
+ }
+ 
+--
+libgit2 0.28.2
+

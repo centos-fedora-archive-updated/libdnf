@@ -32,7 +32,7 @@
 
 Name:           libdnf
 Version:        0.31.0
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -45,6 +45,12 @@ Patch0004:      0004-Unit-tests-for-reintroduced-hawkeyRepo.patch
 Patch0005:      0005-Set-relevant-g_log-domain-handlers-instead-of-a-default-one.patch
 Patch0006:      0006-Add-a-debug-argument-to-LibrepologaddHandler.patch
 Patch0007:      0007-Add-a-logdebug-argument-to-hawkeySack.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=1631533
+Patch0008:      0008-sqlite3-Fix-database-is-locked-error-by-setting-busy-timeout-correctly.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=1596540
+Patch0009:      0009-Fix-no-such-table-maintrans_cmdline-error-RhBug1596540.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=1584442
+Patch0010:      0010-config-Fix-toString-to-not-insert--RhBug1584442.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -255,6 +261,12 @@ popd
 %endif
 
 %changelog
+* Wed Aug 14 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-6
+- Fix 'database is locked' error by setting busy timeout correctly
+  (RhBug:1631533)
+- Fix 'no such table: main.trans_cmdline' error (RhBug:1596540,1650101,1658091)
+- [config] Fix: toString() to not insert [] (RhBug:1584442)
+
 * Tue Jul 30 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-5
 - Rebuilt for librepo 1.10.5
 

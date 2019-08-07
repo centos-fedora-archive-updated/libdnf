@@ -37,8 +37,8 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.35.1
-Release:        3%{?dist}
+Version:        0.35.2
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -50,9 +50,8 @@ Patch0002:      0002-Revert-Set-default-to-skip_if_unavailablefalse-RhBug1679509
 # Temporary patch to not fail on modular RPMs without modular metadata
 # until the infrastructure is ready
 Patch0003:      0003-Revert-consequences-of-Fail-Safe-mechanism.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=1727343
-# https://bugzilla.redhat.com/show_bug.cgi?id=1727424
-Patch0004:      0004-Fix-attaching-and-detaching-of-libsolvRepo.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=1691430
+Patch0004:      0004-hy_detect_arch-detect-crypto-only-on-arm-version--8.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -81,6 +80,16 @@ BuildRequires:  gpgme-devel
 Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
 Requires:       libsolv%{?_isa} >= %{libsolv_version}
 Requires:       librepo%{?_isa} >= %{librepo_version}
+
+%if %{without python2}
+# Obsoleted from here so we can track the fast growing version easily.
+# We intentionally only obsolete and not provide, this is a broken upgrade
+# prevention, not providing the removed functionality.
+Obsoletes:      python2-%{name} < %{version}-%{release}
+Obsoletes:      python2-hawkey < %{version}-%{release}
+Obsoletes:      python2-hawkey-debuginfo < %{version}-%{release}
+Obsoletes:      python2-libdnf-debuginfo < %{version}-%{release}
+%endif
 
 %description
 A Library providing simplified C and Python API to libsolv.
@@ -234,6 +243,8 @@ popd
 %license COPYING
 %doc README.md AUTHORS
 %{_libdir}/%{name}.so.*
+%dir %{_libdir}/libdnf/
+%dir %{_libdir}/libdnf/plugins/
 %{_libdir}/libdnf/plugins/README
 
 %files devel
@@ -263,6 +274,16 @@ popd
 %endif
 
 %changelog
+* Wed Aug 14 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.2-1
+- Update to 0.35.2
+- Make libdnf own its plugin directory (RhBug:1714265)
+- Don't disable nonexistent but required repositories (RhBug:1689331)
+- Set priority of dnf.conf.d drop-ins
+- Fix toString() to not insert [] (RhBug:1584442)
+- Ignore trailing blank lines in config (RhBug:1722493)
+- Fix handling large number of filenames on input (RhBug:1690915)
+- Detect armv7 with crypto extension only on arm version >= 8
+
 * Tue Jul 30 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-3
 - Rebuilt for librepo 1.10.5
 

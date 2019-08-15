@@ -38,7 +38,7 @@
 
 Name:           libdnf
 Version:        0.35.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -269,6 +269,9 @@ popd
 %endif
 
 %changelog
+* Thu Aug 15 2019 Miro Hrončok <mhroncok@redhat.com> - 0.35.3-2
+- Rebuilt for Python 3.8
+
 * Tue Aug 13 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.3-1
 - Update to 0.35.3
 - Make libdnf own its plugin directory (RhBug:1714265)

@@ -32,6 +32,12 @@
 %bcond_with rhsm
 %endif
 
+%if 0%{?rhel}
+%bcond_with zchunk
+%else
+%bcond_without zchunk
+%endif
+
 %global _cmake_opts \\\
     -DENABLE_RHSM_SUPPORT=%{?with_rhsm:ON}%{!?with_rhsm:OFF} \\\
     %{nil}
@@ -181,14 +187,14 @@ mkdir build-py3
 %build
 %if %{with python2}
 pushd build-py2
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{?with_zchunk:-DWITH_ZCHUNK=ON} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 %endif # with python2
 
 %if %{with python3}
 pushd build-py3
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{?with_zchunk:-DWITH_ZCHUNK=ON} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 %endif
@@ -271,6 +277,9 @@ popd
 %endif
 
 %changelog
+* Sat Sep 14 2019 Jonathan Dieter <jdieter@gmail.com> - 0.35.3-5
+- Set LRO_CACHEDIR so zchunk works again
+
 * Wed Sep 11 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-4
 - Backport patch to fix reinstalling packages with a different buildtime - part II
 

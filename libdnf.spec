@@ -44,7 +44,7 @@
 
 Name:           libdnf
 Version:        0.35.3
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -70,6 +70,9 @@ BuildRequires:  pkgconfig(gtk-doc)
 BuildRequires:  rpm-devel >= %{rpm_version}
 %if %{with rhsm}
 BuildRequires:  pkgconfig(librhsm) >= 0.0.3
+%endif
+%if %{with zchunk}
+BuildRequires:  zchunk-devel >= 0.9.11
 %endif
 BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)

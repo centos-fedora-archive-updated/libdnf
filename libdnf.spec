@@ -32,13 +32,19 @@
 %bcond_with rhsm
 %endif
 
+%if 0%{?rhel}
+%bcond_with zchunk
+%else
+%bcond_without zchunk
+%endif
+
 %global _cmake_opts \\\
     -DENABLE_RHSM_SUPPORT=%{?with_rhsm:ON}%{!?with_rhsm:OFF} \\\
     %{nil}
 
 Name:           libdnf
 Version:        0.35.2
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -54,7 +60,9 @@ Patch0003:      0003-Revert-consequences-of-Fail-Safe-mechanism.patch
 Patch0004:      0004-hy_detect_arch-detect-crypto-only-on-arm-version--8.patch
 Patch0005:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
 Patch0006:      0005-Apply-targeted-upgrade-only-for-selector-with-packages.patch
-
+# Temporary until patch is upstreamed
+# https://bugzilla.redhat.com/show_bug.cgi?id=1739867
+Patch0007:      libdnf-0.35-fix-zchunk.patch
 BuildRequires:  cmake
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -69,6 +77,9 @@ BuildRequires:  pkgconfig(gtk-doc)
 BuildRequires:  rpm-devel >= %{rpm_version}
 %if %{with rhsm}
 BuildRequires:  pkgconfig(librhsm) >= 0.0.3
+%endif
+%if %{with zchunk}
+BuildRequires:  zchunk-devel >= 0.9.11
 %endif
 BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)
@@ -186,14 +197,14 @@ mkdir build-py3
 %build
 %if %{with python2}
 pushd build-py2
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{?with_zchunk:-DWITH_ZCHUNK=ON} %{_cmake_opts}
   %make_build
 popd
 %endif # with python2
 
 %if %{with python3}
 pushd build-py3
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{?with_zchunk:-DWITH_ZCHUNK=ON} %{_cmake_opts}
   %make_build
 popd
 %endif
@@ -276,6 +287,9 @@ popd
 %endif
 
 %changelog
+* Sat Sep 14 2019 Jonathan Dieter <jdieter@gmail.com> - 0.35.2-4
+- Rebuild for zchunk enabled librepo
+
 * Wed Sep 11 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.2-3
 - Backport patch to fix reinstalling packages with a different buildtime - part II
 

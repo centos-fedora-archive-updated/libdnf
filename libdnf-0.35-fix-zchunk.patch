@@ -23,3 +23,47 @@ index 16b63308..c69026d1 100644
  if(ENABLE_RHSM_SUPPORT)
      pkg_check_modules(RHSM REQUIRED librhsm>=0.0.3)
      include_directories(${RHSM_INCLUDE_DIRS})
+diff --git a/libdnf.spec b/libdnf.spec
+index 60091ccf..2e1f958c 100644
+--- a/libdnf.spec
++++ b/libdnf.spec
+@@ -32,6 +32,12 @@
+ %bcond_with rhsm
+ %endif
+ 
++%if 0%{?rhel}
++%bcond_with zchunk
++%else
++%bcond_without zchunk
++%endif
++
+ %global _cmake_opts \\\
+     -DENABLE_RHSM_SUPPORT=%{?with_rhsm:ON}%{!?with_rhsm:OFF} \\\
+     %{nil}
+@@ -59,6 +65,9 @@ BuildRequires:  rpm-devel >= %{rpm_version}
+ %if %{with rhsm}
+ BuildRequires:  pkgconfig(librhsm) >= 0.0.3
+ %endif
++%if %{with zchunk}
++BuildRequires:  pkgconfig(zck) >= 0.9.11
++%endif
+ BuildRequires:  pkgconfig(sqlite3)
+ BuildRequires:  pkgconfig(json-c)
+ BuildRequires:  pkgconfig(cppunit)
+@@ -175,14 +184,14 @@ mkdir build-py3
+ %build
+ %if %{with python2}
+ pushd build-py2
+-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
++  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+   %make_build
+ popd
+ %endif # with python2
+ 
+ %if %{with python3}
+ pushd build-py3
+-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
++  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+   %make_build
+ popd
+ %endif

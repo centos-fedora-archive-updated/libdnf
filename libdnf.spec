@@ -55,6 +55,9 @@ Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 Patch0002:      0002-Revert-consequences-of-Fail-Safe-mechanism.patch
 Patch0003:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
 Patch0004:      0005-Apply-targeted-upgrade-only-for-selector-with-packages.patch
+# Temporary until patch is upstreamed
+# https://bugzilla.redhat.com/show_bug.cgi?id=1739867
+Patch0005:      libdnf-0.35-fix-zchunk.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -72,7 +75,7 @@ BuildRequires:  rpm-devel >= %{rpm_version}
 BuildRequires:  pkgconfig(librhsm) >= 0.0.3
 %endif
 %if %{with zchunk}
-BuildRequires:  zchunk-devel >= 0.9.11
+BuildRequires:  pkgconfig(zck) >= 0.9.11
 %endif
 BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)

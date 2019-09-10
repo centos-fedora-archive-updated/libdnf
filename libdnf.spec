@@ -1,7 +1,7 @@
 %global libsolv_version 0.7.4-1
 %global libmodulemd_version 1.6.1
 %global librepo_version 1.10.0
-%global dnf_conflict 4.2.5
+%global dnf_conflict 4.2.9-3
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -38,7 +38,7 @@
 
 Name:           libdnf
 Version:        0.35.3
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -47,6 +47,7 @@ Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 # Temporary patch to not fail on modular RPMs without modular metadata
 # until the infrastructure is ready
 Patch0002:      0002-Revert-consequences-of-Fail-Safe-mechanism.patch
+Patch0003:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -269,6 +270,9 @@ popd
 %endif
 
 %changelog
+* Thu Sep 10 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-3
+- Backport patch to fix reinstalling packages with a different buildtime
+
 * Thu Aug 15 2019 Miro Hrončok <mhroncok@redhat.com> - 0.35.3-2
 - Rebuilt for Python 3.8
 

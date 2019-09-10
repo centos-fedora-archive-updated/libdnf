@@ -1,7 +1,7 @@
 %global libsolv_version 0.7.4-1
 %global libmodulemd_version 1.6.1
 %global librepo_version 1.9.5
-%global dnf_conflict 4.2.5
+%global dnf_conflict 4.2.5-5
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -32,7 +32,7 @@
 
 Name:           libdnf
 Version:        0.31.0
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -51,6 +51,8 @@ Patch0008:      0008-sqlite3-Fix-database-is-locked-error-by-setting-busy-timeou
 Patch0009:      0009-Fix-no-such-table-maintrans_cmdline-error-RhBug1596540.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1584442
 Patch0010:      0010-config-Fix-toString-to-not-insert--RhBug1584442.patch
+Patch0011:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
+Patch0012:      0011-Apply-targeted-upgrade-only-for-selector-with-packages.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -261,6 +263,9 @@ popd
 %endif
 
 %changelog
+* Wed Sep 11 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.31.0-7
+- Backport patch to fix reinstalling packages with a different buildtime
+
 * Wed Aug 14 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.1-6
 - Fix 'database is locked' error by setting busy timeout correctly
   (RhBug:1631533)

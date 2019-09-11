@@ -1,0 +1,34 @@
+From c235dae84d1b45911f6de1c5d31fedf4856c0d42 Mon Sep 17 00:00:00 2001
+From: Jaroslav Mracek <jmracek@redhat.com>
+Date: Wed, 11 Sep 2019 13:26:43 +0200
+Subject: [PATCH] Apply targeted upgrade only for selector with packages
+
+It resolves problem when selector with name filter is used. Then
+targeted transaction ignores obsoletes.
+
+Closes: #793
+Approved by: jrohel
+---
+ libdnf/goal/Goal.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/libdnf/goal/Goal.cpp b/libdnf/goal/Goal.cpp
+index a38cbb4..88e7b8c 100644
+--- a/libdnf/goal/Goal.cpp
++++ b/libdnf/goal/Goal.cpp
+@@ -767,7 +767,11 @@ void
+ Goal::upgrade(HySelector sltr)
+ {
+     pImpl->actions = static_cast<DnfGoalActions>(pImpl->actions | DNF_UPGRADE);
+-    sltrToJob(sltr, &pImpl->staging, SOLVER_UPDATE|SOLVER_TARGETED);
++    auto flags = SOLVER_UPDATE;
++    if (sltr->getPkgs()) {
++        flags |= SOLVER_TARGETED;
++    }
++    sltrToJob(sltr, &pImpl->staging, flags);
+ }
+ 
+ void
+--
+libgit2 0.28.2
+

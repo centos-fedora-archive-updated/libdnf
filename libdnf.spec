@@ -38,7 +38,7 @@
 
 Name:           libdnf
 Version:        0.35.3
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -48,6 +48,7 @@ Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 # until the infrastructure is ready
 Patch0002:      0002-Revert-consequences-of-Fail-Safe-mechanism.patch
 Patch0003:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
+Patch0004:      0005-Apply-targeted-upgrade-only-for-selector-with-packages.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -270,6 +271,9 @@ popd
 %endif
 
 %changelog
+* Wed Sep 11 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-4
+- Backport patch to fix reinstalling packages with a different buildtime - part II
+
 * Thu Sep 10 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-3
 - Backport patch to fix reinstalling packages with a different buildtime
 

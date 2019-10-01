@@ -1,7 +1,7 @@
 %global libsolv_version 0.7.4-1
 %global libmodulemd_version 1.6.1
 %global librepo_version 1.10.0
-%global dnf_conflict 4.2.8-2
+%global dnf_conflict 4.2.11
 %global swig_version 3.0.12
 
 %bcond_with valgrind
@@ -44,7 +44,7 @@
 
 Name:           libdnf
 Version:        0.35.5
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -217,11 +217,19 @@ pushd build-py2
 popd
 %endif # with python2
 %if %{with python3}
-# Run just the Python tests, not all of them, since
-# we have coverage of the core from the first build
+# If we didn't run the general tests yet, do it now.
+%if %{without python2}
+pushd build-py3
+  make ARGS="-V" test
+popd
+%else
+# Otherwise, run just the Python tests, not all of
+# them, since we have coverage of the core from the
+# first build
 pushd build-py3/python/hawkey/tests
   make ARGS="-V" test
 popd
+%endif
 %endif
 
 %install
@@ -280,6 +288,9 @@ popd
 %endif
 
 %changelog
+* Tue Oct 01 2019 Ales Matej <amatej@redhat.com> - 0.35.5-2
+- Fix dnf-conflict version
+
 * Tue Oct 01 2019 Ales Matej <amatej@redhat.com> - 0.35.5-1
 - Update to 0.35.5
 - Fix crash in PackageKit (RhBug:1636803)

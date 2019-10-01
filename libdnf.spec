@@ -43,8 +43,8 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.35.2
-Release:        4%{?dist}
+Version:        0.35.5
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -53,16 +53,8 @@ Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 # Do not the change of include skip_if_unavailable fedault to false for Fedora < 31
 # https://fedoraproject.org/wiki/Changes/Set_skip_if_unavailable_default_to_false
 Patch0002:      0002-Revert-Set-default-to-skip_if_unavailablefalse-RhBug1679509.patch
-# Temporary patch to not fail on modular RPMs without modular metadata
-# until the infrastructure is ready
-Patch0003:      0003-Revert-consequences-of-Fail-Safe-mechanism.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=1691430
-Patch0004:      0004-hy_detect_arch-detect-crypto-only-on-arm-version--8.patch
-Patch0005:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
-Patch0006:      0005-Apply-targeted-upgrade-only-for-selector-with-packages.patch
-# Temporary until patch is upstreamed
-# https://bugzilla.redhat.com/show_bug.cgi?id=1739867
-Patch0007:      libdnf-0.35-fix-zchunk.patch
+# This change is not approved in F30 (https://fedoraproject.org/wiki/Changes/DNF_Better_Counting)
+Patch0003:      0003-Revert-countme.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -288,6 +280,22 @@ popd
 %endif
 
 %changelog
+* Tue Oct 01 2019 Ales Matej <amatej@redhat.com> - 0.35.5-1
+- Update to 0.35.5
+- Fix crash in PackageKit (RhBug:1636803)
+- Do not create @System.solv files (RhBug:1707995)
+- Set LRO_CACHEDIR so zchunk works again (RhBug:1739867)
+- Don't reinstall modified packages with the same NEVRA (RhBug:1644241)
+- Fix bug when moving temporary repository metadata after download (RhBug:1700341)
+- Improve detection of extras packages by comparing (name, arch) pair instead of full NEVRA (RhBuh:1684517)
+- Improve handling multilib packages in the history command (RhBug:1728637)
+- Repo download: use full error description into the exception text (RhBug:1741442)
+- Properly close hawkey.log (RhBug:1594016)
+- Fix dnf updateinfo --update to not list advisories for packages updatable only from non-enabled modules
+- Apply modular filtering by package name (RhBug:1702729)
+- Fully enable the modular fail safe mechanism (RhBug:1616167)
+- Detect armv7 with crypto extension only on arm version >= 8
+
 * Sat Sep 14 2019 Jonathan Dieter <jdieter@gmail.com> - 0.35.2-4
 - Rebuild for zchunk enabled librepo
 

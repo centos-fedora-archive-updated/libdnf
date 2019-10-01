@@ -43,21 +43,13 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.35.3
-Release:        5%{?dist}
+Version:        0.35.5
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
-# Temporary patch to not fail on modular RPMs without modular metadata
-# until the infrastructure is ready
-Patch0002:      0002-Revert-consequences-of-Fail-Safe-mechanism.patch
-Patch0003:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
-Patch0004:      0005-Apply-targeted-upgrade-only-for-selector-with-packages.patch
-# Temporary until patch is upstreamed
-# https://bugzilla.redhat.com/show_bug.cgi?id=1739867
-Patch0005:      libdnf-0.35-fix-zchunk.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -283,6 +275,21 @@ popd
 %endif
 
 %changelog
+* Tue Oct 01 2019 Ales Matej <amatej@redhat.com> - 0.35.5-1
+- Update to 0.35.5
+- Fix crash in PackageKit (RhBug:1636803)
+- Do not create @System.solv files (RhBug:1707995)
+- Set LRO_CACHEDIR so zchunk works again (RhBug:1739867)
+- Don't reinstall modified packages with the same NEVRA (RhBug:1644241)
+- Fix bug when moving temporary repository metadata after download (RhBug:1700341)
+- Improve detection of extras packages by comparing (name, arch) pair instead of full NEVRA (RhBuh:1684517)
+- Improve handling multilib packages in the history command (RhBug:1728637)
+- Repo download: use full error description into the exception text (RhBug:1741442)
+- Properly close hawkey.log (RhBug:1594016)
+- Fix dnf updateinfo --update to not list advisories for packages updatable only from non-enabled modules
+- Apply modular filtering by package name (RhBug:1702729)
+- Fully enable the modular fail safe mechanism (RhBug:1616167)
+
 * Sat Sep 14 2019 Jonathan Dieter <jdieter@gmail.com> - 0.35.3-5
 - Set LRO_CACHEDIR so zchunk works again
 

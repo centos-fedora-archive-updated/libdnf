@@ -1,4 +1,4 @@
-%global libsolv_version 0.7.4-1
+%global libsolv_version 0.7.6-3
 %global libmodulemd_version 1.6.1
 %global librepo_version 1.10.0
 %global dnf_conflict 4.2.11
@@ -44,12 +44,13 @@
 
 Name:           libdnf
 Version:        0.35.5
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
+Patch0002:      0001-Use-POOL_FLAG_WHATPROVIDESWITHDISABLED.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -283,6 +284,10 @@ popd
 %endif
 
 %changelog
+* Mon Oct 14 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.5-3
+- Add POOL_FLAG_WHATPROVIDESWITHDISABLED flag into pool.
+- Resolves: 1737469
+
 * Tue Oct 01 2019 Ales Matej <amatej@redhat.com> - 0.35.5-2
 - Fix dnf-conflict version
 

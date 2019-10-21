@@ -44,7 +44,7 @@
 
 Name:           libdnf
 Version:        0.35.3
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -58,6 +58,8 @@ Patch0004:      0005-Apply-targeted-upgrade-only-for-selector-with-packages.patc
 # Temporary until patch is upstreamed
 # https://bugzilla.redhat.com/show_bug.cgi?id=1739867
 Patch0005:      libdnf-0.35-fix-zchunk.patch
+# Fixes issues on arm such as RhBug:1562084 (RhBug: 1691430)
+Patch0006:      0006-Fixes-for-some-issues-on-Arm-platforms.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -283,13 +285,16 @@ popd
 %endif
 
 %changelog
+* Mon Oct 21 2019 Ales Matej <amatej@gmail.com> - 0.35.3-6
+- Fixes for some issues on Arm platforms (RhBug:1691430) 
+
 * Sat Sep 14 2019 Jonathan Dieter <jdieter@gmail.com> - 0.35.3-5
 - Set LRO_CACHEDIR so zchunk works again
 
 * Wed Sep 11 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-4
 - Backport patch to fix reinstalling packages with a different buildtime - part II
 
-* Thu Sep 10 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-3
+* Tue Sep 10 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-3
 - Backport patch to fix reinstalling packages with a different buildtime
 
 * Thu Aug 15 2019 Miro Hrončok <mhroncok@redhat.com> - 0.35.3-2

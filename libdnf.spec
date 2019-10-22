@@ -44,13 +44,14 @@
 
 Name:           libdnf
 Version:        0.35.5
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 Patch0002:      0001-Use-POOL_FLAG_WHATPROVIDESWITHDISABLED.patch
+Patch0003:      0003-Fix-leaking-log-handlers-in-Sack.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -284,6 +285,9 @@ popd
 %endif
 
 %changelog
+* Tue Oct 22 2019 Ales Matej <amatej@redhat.com> - 0.35.5-4
+- Fix leaking log handlers in Sack that can cause a crash (RhBug:1758737)
+
 * Mon Oct 14 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.5-3
 - Add POOL_FLAG_WHATPROVIDESWITHDISABLED flag into pool.
 - Resolves: 1737469
@@ -312,7 +316,7 @@ popd
 * Wed Sep 11 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-4
 - Backport patch to fix reinstalling packages with a different buildtime - part II
 
-* Thu Sep 10 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-3
+* Tue Sep 10 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.3-3
 - Backport patch to fix reinstalling packages with a different buildtime
 
 * Thu Aug 15 2019 Miro Hrončok <mhroncok@redhat.com> - 0.35.3-2

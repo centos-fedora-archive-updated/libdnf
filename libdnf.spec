@@ -44,7 +44,7 @@
 
 Name:           libdnf
 Version:        0.35.5
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -55,6 +55,7 @@ Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 Patch0002:      0002-Revert-Set-default-to-skip_if_unavailablefalse-RhBug1679509.patch
 # This change is not approved in F30 (https://fedoraproject.org/wiki/Changes/DNF_Better_Counting)
 Patch0003:      0003-Revert-countme.patch
+Patch0004:      0004-Fix-leaking-log-handlers-in-Sack.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -288,6 +289,9 @@ popd
 %endif
 
 %changelog
+* Tue Oct 22 2019 Ales Matej <amatej@redhat.com> - 0.35.5-3
+- Fix leaking log handlers in Sack that can cause a crash (RhBug:1758737)
+
 * Tue Oct 01 2019 Ales Matej <amatej@redhat.com> - 0.35.5-2
 - Fix dnf-conflict version
 
@@ -313,7 +317,7 @@ popd
 * Wed Sep 11 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.2-3
 - Backport patch to fix reinstalling packages with a different buildtime - part II
 
-* Thu Sep 10 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.2-2
+* Tue Sep 10 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.35.2-2
 - Backport patch to fix reinstalling packages with a different buildtime
 
 * Wed Aug 14 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.35.2-1

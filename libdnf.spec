@@ -44,7 +44,7 @@
 
 Name:           libdnf
 Version:        0.35.5
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -52,6 +52,9 @@ Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
 Patch0002:      0001-Use-POOL_FLAG_WHATPROVIDESWITHDISABLED.patch
 Patch0003:      0003-Fix-leaking-log-handlers-in-Sack.patch
+
+Patch0005:      0001-Revert-hy_detect_arch-detect-crypto-only-on-arm-vers.patch
+Patch0006:      0002-Fix-Arm-detection-improvements.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -285,6 +288,9 @@ popd
 %endif
 
 %changelog
+* Wed Oct 23 2019 Peter Robinson <pbrobinson@fedoraproject.org> 0.35.5-5
+- Fixes for some issues on Arm platforms (rhbz 1691430)
+
 * Tue Oct 22 2019 Ales Matej <amatej@redhat.com> - 0.35.5-4
 - Fix leaking log handlers in Sack that can cause a crash (RhBug:1758737)
 

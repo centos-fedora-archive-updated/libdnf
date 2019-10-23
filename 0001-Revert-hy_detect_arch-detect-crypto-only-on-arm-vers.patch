@@ -1,0 +1,33 @@
+From d9684b99ed849e11b366ee1e6d98b88daf4b41ba Mon Sep 17 00:00:00 2001
+From: Peter Robinson <pbrobinson@gmail.com>
+Date: Wed, 16 Oct 2019 10:58:03 +0100
+Subject: [PATCH 1/2] Revert "hy_detect_arch(): detect crypto only on arm
+ version >= 8"
+
+This reverts commit 6c4f7462b3004e39e82c4ec186175ea4a56035b4.
+
+The reverts the commit. More details will be in the fixes for commit
+73b0de05a4d2.
+
+Signed-off-by: Peter Robinson <pbrobinson@gmail.com>
+---
+ libdnf/hy-util.cpp | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/libdnf/hy-util.cpp b/libdnf/hy-util.cpp
+index f6de87d3..61838cc3 100644
+--- a/libdnf/hy-util.cpp
++++ b/libdnf/hy-util.cpp
+@@ -118,8 +118,7 @@ hy_detect_arch(char **arch)
+             modifier++;
+         if (getauxval(AT_HWCAP) & HWCAP_ARM_VFP)
+             *modifier++ = 'h';
+-        // arm version >= 8 can have crypto extension
+-        if ((atoi(un.machine+4) >= 8) && (getauxval(AT_HWCAP2) & HWCAP2_AES))
++        if (getauxval(AT_HWCAP2) & HWCAP2_AES)
+             *modifier++ = 'c';
+         if (getauxval(AT_HWCAP) & HWCAP_ARM_NEON)
+             *modifier++ = 'n';
+-- 
+2.23.0
+

@@ -32,7 +32,7 @@
 
 Name:           libdnf
 Version:        0.31.0
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -53,6 +53,8 @@ Patch0009:      0009-Fix-no-such-table-maintrans_cmdline-error-RhBug1596540.patc
 Patch0010:      0010-config-Fix-toString-to-not-insert--RhBug1584442.patch
 Patch0011:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
 Patch0012:      0011-Apply-targeted-upgrade-only-for-selector-with-packages.patch
+Patch0013:      0001-Add-module-reset-function-into-dnf_context.patch
+Patch0014:      0001-Make-changes-in-dnf_context_reset_modules-permanent.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -263,6 +265,9 @@ popd
 %endif
 
 %changelog
+* Thu Oct 24 2019 Kalev Lember <klember@redhat.com> - 0.31.0-8
+- Backport new API for resetting module streams (RhBug:1762751)
+
 * Wed Sep 11 2019 Jaroslav Mracek <jmracek@redhat.com> - 0.31.0-7
 - Backport patch to fix reinstalling packages with a different buildtime
 

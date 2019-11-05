@@ -1,0 +1,424 @@
+From 30849ecec3854061315b40cd9c4212f6ae1ab2f4 Mon Sep 17 00:00:00 2001
+From: Michal Domonkos <mdomonko@redhat.com>
+Date: Fri, 8 Nov 2019 15:10:12 +0100
+Subject: [PATCH] Revert countme
+
+---
+ libdnf/conf/ConfigMain.cpp   |   8 ---
+ libdnf/conf/ConfigMain.hpp   |   2 -
+ libdnf/conf/ConfigRepo.cpp   |   6 --
+ libdnf/conf/ConfigRepo.hpp   |   2 -
+ libdnf/dnf-context.cpp       |   3 +-
+ libdnf/dnf-repo.cpp          |  15 -----
+ libdnf/repo/Repo-private.hpp |   1 -
+ libdnf/repo/Repo.cpp         | 125 +----------------------------------
+ libdnf/utils/utils.cpp       |  10 ---
+ libdnf/utils/utils.hpp       |  12 ----
+ 10 files changed, 4 insertions(+), 180 deletions(-)
+
+diff --git a/libdnf/conf/ConfigMain.cpp b/libdnf/conf/ConfigMain.cpp
+index fe1ccbd7f..4eef2f9b7 100644
+--- a/libdnf/conf/ConfigMain.cpp
++++ b/libdnf/conf/ConfigMain.cpp
+@@ -21,7 +21,6 @@
+ #include "ConfigMain.hpp"
+ #include "Const.hpp"
+ #include "Config-private.hpp"
+-#include "libdnf/utils/os-release.hpp"
+ #include "utils.hpp"
+ 
+ #include <algorithm>
+@@ -276,9 +275,6 @@ class ConfigMain::Impl {
+     OptionBool ignorearch{false};
+     OptionString module_platform_id{nullptr};
+ 
+-    OptionString user_agent{getUserAgent()};
+-    OptionBool countme{false};
+-
+     // Repo main config
+ 
+     OptionNumber<std::uint32_t> retries{10};
+@@ -427,8 +423,6 @@ ConfigMain::Impl::Impl(Config & owner)
+     owner.optBinds().add("comment", comment);
+     owner.optBinds().add("ignorearch", ignorearch);
+     owner.optBinds().add("module_platform_id", module_platform_id);
+-    owner.optBinds().add("user_agent", user_agent);
+-    owner.optBinds().add("countme", countme);
+ 
+     // Repo main config
+ 
+@@ -558,8 +552,6 @@ OptionBool & ConfigMain::downloadonly() { return pImpl->downloadonly; }
+ OptionBool & ConfigMain::ignorearch() { return pImpl->ignorearch; }
+ 
+ OptionString & ConfigMain::module_platform_id() { return pImpl->module_platform_id; }
+-OptionString & ConfigMain::user_agent() { return pImpl->user_agent; }
+-OptionBool & ConfigMain::countme() { return pImpl->countme; }
+ 
+ // Repo main config
+ OptionNumber<std::uint32_t> & ConfigMain::retries() { return pImpl->retries; }
+diff --git a/libdnf/conf/ConfigMain.hpp b/libdnf/conf/ConfigMain.hpp
+index 118ecbf1c..3303e94fc 100644
+--- a/libdnf/conf/ConfigMain.hpp
++++ b/libdnf/conf/ConfigMain.hpp
+@@ -122,8 +122,6 @@ class ConfigMain : public Config {
+     OptionBool & ignorearch();
+ 
+     OptionString & module_platform_id();
+-    OptionString & user_agent();
+-    OptionBool & countme();
+ 
+     // Repo main config
+     OptionNumber<std::uint32_t> & retries();
+diff --git a/libdnf/conf/ConfigRepo.cpp b/libdnf/conf/ConfigRepo.cpp
+index bf8c41907..e86cdff3d 100644
+--- a/libdnf/conf/ConfigRepo.cpp
++++ b/libdnf/conf/ConfigRepo.cpp
+@@ -73,8 +73,6 @@ class ConfigRepo::Impl {
+     OptionChild<OptionNumber<std::uint32_t> > deltarpm_percentage{masterConfig.deltarpm_percentage()};
+     OptionChild<OptionBool> skip_if_unavailable{masterConfig.skip_if_unavailable()};
+     OptionString enabled_metadata{""};
+-    OptionChild<OptionString> user_agent{masterConfig.user_agent()};
+-    OptionChild<OptionBool> countme{masterConfig.countme()};
+     OptionEnum<std::string> failovermethod{"priority", {"priority", "roundrobin"}};
+ };
+ 
+@@ -150,8 +148,6 @@ ConfigRepo::Impl::Impl(Config & owner, ConfigMain & masterConfig)
+     owner.optBinds().add("deltarpm_percentage", deltarpm_percentage);
+     owner.optBinds().add("skip_if_unavailable", skip_if_unavailable);
+     owner.optBinds().add("enabled_metadata", enabled_metadata);
+-    owner.optBinds().add("user_agent", user_agent);
+-    owner.optBinds().add("countme", countme);
+ }
+ 
+ ConfigRepo::ConfigRepo(ConfigMain & masterConfig) : pImpl(new Impl(*this, masterConfig)) {}
+@@ -201,8 +197,6 @@ OptionChild<OptionBool> & ConfigRepo::deltarpm() { return pImpl->deltarpm; }
+ OptionChild<OptionNumber<std::uint32_t> > & ConfigRepo::deltarpm_percentage() { return pImpl->deltarpm_percentage; }
+ OptionChild<OptionBool> & ConfigRepo::skip_if_unavailable() { return pImpl->skip_if_unavailable; }
+ OptionString & ConfigRepo::enabled_metadata() { return pImpl->enabled_metadata; }
+-OptionChild<OptionString> & ConfigRepo::user_agent() { return pImpl->user_agent; }
+-OptionChild<OptionBool> & ConfigRepo::countme() { return pImpl->countme; }
+ OptionEnum<std::string> & ConfigRepo::failovermethod() { return pImpl->failovermethod; }
+ 
+ }
+diff --git a/libdnf/conf/ConfigRepo.hpp b/libdnf/conf/ConfigRepo.hpp
+index a59e0209b..a47030bff 100644
+--- a/libdnf/conf/ConfigRepo.hpp
++++ b/libdnf/conf/ConfigRepo.hpp
+@@ -88,8 +88,6 @@ class ConfigRepo : public Config {
+     OptionChild<OptionBool> & skip_if_unavailable();
+     // option recognized by other tools, e.g. gnome-software, but unused in dnf
+     OptionString & enabled_metadata();
+-    OptionChild<OptionString> & user_agent();
+-    OptionChild<OptionBool> & countme();
+     // yum compatibility options
+     OptionEnum<std::string> & failovermethod();
+ 
+diff --git a/libdnf/dnf-context.cpp b/libdnf/dnf-context.cpp
+index b3cae1a83..4d40dff94 100644
+--- a/libdnf/dnf-context.cpp
++++ b/libdnf/dnf-context.cpp
+@@ -71,7 +71,6 @@
+ #include "goal/Goal.hpp"
+ #include "plugin/plugin-private.hpp"
+ #include "module/modulemd/ModuleDefaultsContainer.hpp"
+-#include "utils/os-release.hpp"
+ 
+ 
+ #define MAX_NATIVE_ARCHES    12
+@@ -265,7 +264,7 @@ dnf_context_init(DnfContext *context)
+     priv->cache_age = 60 * 60 * 24 * 7; /* 1 week */
+     priv->override_macros = g_hash_table_new_full(g_str_hash, g_str_equal,
+                                                   g_free, g_free);
+-    priv->user_agent = g_strdup(libdnf::getUserAgent().c_str());
++    priv->user_agent = g_strdup("libdnf/" PACKAGE_VERSION);
+ 
+     priv->vars = new std::map<std::string, std::string>;
+ 
+diff --git a/libdnf/dnf-repo.cpp b/libdnf/dnf-repo.cpp
+index 9eca7eb8b..06dc1734b 100644
+--- a/libdnf/dnf-repo.cpp
++++ b/libdnf/dnf-repo.cpp
+@@ -990,18 +990,6 @@ dnf_repo_set_keyfile_data(DnfRepo *repo, GError **error)
+     if (!lr_handle_setopt(priv->repo_handle, error, LRO_METALINKURL, metalinkurl))
+         return FALSE;
+ 
+-    /* needed in order for addCountmeFlag() to use the same persistdir as DNF
+-     * would */
+-    if (metalinkurl)
+-        priv->repo->getConfig()->metalink().set(libdnf::Option::Priority::REPOCONFIG, metalinkurl);
+-    if (mirrorlisturl)
+-        priv->repo->getConfig()->mirrorlist().set(libdnf::Option::Priority::REPOCONFIG, mirrorlisturl);
+-
+-    if (g_key_file_has_key(priv->keyfile, repoId, "countme", NULL)) {
+-        bool countme = dnf_repo_get_boolean(priv->keyfile, repoId, "countme");
+-        priv->repo->getConfig()->countme().set(libdnf::Option::Priority::REPOCONFIG, countme);
+-    }
+-
+     /* file:// */
+     if (baseurls != NULL && baseurls[0] != NULL &&
+         mirrorlisturl == NULL && metalinkurl == NULL) {
+@@ -1706,9 +1694,6 @@ dnf_repo_update(DnfRepo *repo,
+     if (!dnf_repo_set_keyfile_data(repo, error))
+         return FALSE;
+ 
+-    /* countme support */
+-    libdnf::repoGetImpl(priv->repo)->addCountmeFlag(priv->repo_handle);
+-
+     /* take lock */
+     ret = dnf_state_take_lock(state,
+                               DNF_LOCK_TYPE_METADATA,
+diff --git a/libdnf/repo/Repo-private.hpp b/libdnf/repo/Repo-private.hpp
+index 890a371db..ca5b3cfcc 100644
+--- a/libdnf/repo/Repo-private.hpp
++++ b/libdnf/repo/Repo-private.hpp
+@@ -122,7 +122,6 @@ class Repo::Impl {
+     bool isExpired() const;
+     int getExpiresIn() const;
+     void downloadUrl(const char * url, int fd);
+-    void addCountmeFlag(LrHandle *handle);
+     void setHttpHeaders(const char * headers[]);
+     const char * const * getHttpHeaders() const;
+     const std::string & getMetadataPath(const std::string &metadataType) const;
+diff --git a/libdnf/repo/Repo.cpp b/libdnf/repo/Repo.cpp
+index 850e5b4a8..8b1718e27 100644
+--- a/libdnf/repo/Repo.cpp
++++ b/libdnf/repo/Repo.cpp
+@@ -23,6 +23,7 @@
+ #define METALINK_FILENAME "metalink.xml"
+ #define MIRRORLIST_FILENAME  "mirrorlist"
+ #define RECOGNIZED_CHKSUMS {"sha512", "sha256"}
++#define USER_AGENT "libdnf"
+ 
+ #include "../log.hpp"
+ #include "Repo-private.hpp"
+@@ -35,7 +36,6 @@
+ #include "../hy-types.h"
+ #include "libdnf/utils/File.hpp"
+ #include "libdnf/utils/utils.hpp"
+-#include "libdnf/utils/os-release.hpp"
+ 
+ #include "bgettext/bgettext-lib.h"
+ #include "tinyformat/tinyformat.hpp"
+@@ -54,7 +54,6 @@
+ #include <solv/repo.h>
+ #include <solv/util.h>
+ 
+-#include <array>
+ #include <atomic>
+ #include <cctype>
+ #include <cerrno>
+@@ -74,26 +73,6 @@
+ 
+ #include <glib.h>
+ 
+-//
+-// COUNTME CONSTANTS
+-//
+-// width of the sliding time window (in seconds)
+-const int COUNTME_WINDOW = 7*24*60*60;  // 1 week
+-// starting point of the sliding time window relative to the UNIX epoch
+-// allows for aligning the window with a specific weekday
+-const int COUNTME_OFFSET = 345600;  // Monday (1970-01-05 00:00:00 UTC)
+-// estimated number of metalink requests sent over the window
+-// used to generate the probability distribution of counting events
+-const int COUNTME_BUDGET = 4;  // metadata_expire defaults to 2 days
+-// cookie file name
+-const std::string COUNTME_COOKIE = "countme";
+-// cookie file format version
+-const int COUNTME_VERSION = 0;
+-// longevity buckets that we report in the flag
+-// example: {A, B, C} defines 4 buckets [0, A), [A, B), [B, C), [C, infinity)
+-// where each letter represents a window step (starting from 0)
+-const std::array<const int, 3> COUNTME_BUCKETS = { {2, 5, 25} };
+-
+ namespace std {
+ 
+ template<>
+@@ -485,7 +464,7 @@ std::unique_ptr<LrHandle> Repo::Impl::lrHandleInitBase()
+     dlist.push_back(NULL);
+     handleSetOpt(h.get(), LRO_PRESERVETIME, static_cast<long>(preserveRemoteTime));
+     handleSetOpt(h.get(), LRO_REPOTYPE, LR_YUMREPO);
+-    handleSetOpt(h.get(), LRO_USERAGENT, conf->user_agent().getValue().c_str());
++    handleSetOpt(h.get(), LRO_USERAGENT, USER_AGENT);
+     handleSetOpt(h.get(), LRO_YUMDLIST, dlist.data());
+     handleSetOpt(h.get(), LRO_INTERRUPTIBLE, 1L);
+     handleSetOpt(h.get(), LRO_GPGCHECK, conf->repo_gpgcheck().getValue());
+@@ -933,8 +912,6 @@ std::unique_ptr<LrResult> Repo::Impl::lrHandlePerform(LrHandle * handle, const s
+     LrProgressCb progressFunc;
+     handleGetInfo(handle, LRI_PROGRESSCB, &progressFunc);
+ 
+-    addCountmeFlag(handle);
+-
+     std::unique_ptr<LrResult> result;
+     bool ret;
+     bool badGPG = false;
+@@ -1048,100 +1025,6 @@ bool Repo::Impl::loadCache(bool throwExcept)
+     return true;
+ }
+ 
+-void Repo::Impl::addCountmeFlag(LrHandle *handle) {
+-    /*
+-     * The countme flag will be added once (and only once) in every position of
+-     * a sliding time window (COUNTME_WINDOW) that starts at COUNTME_OFFSET and
+-     * moves along the time axis, by one length at a time, in such a way that
+-     * the current point in time always stays within:
+-     *
+-     * UNIX epoch                    now
+-     * |                             |
+-     * |---*-----|-----|-----|-----[-*---]---> time
+-     *     |                       ~~~~~~~
+-     *     COUNTME_OFFSET          COUNTME_WINDOW
+-     *
+-     * This is to align the time window with an absolute point in time rather
+-     * than the last counting event (which could facilitate tracking across
+-     * multiple such events).
+-     */
+-    auto logger(Log::getLogger());
+-
+-    // Bail out if not counting or not running as root (since the persistdir is
+-    // only root-writable)
+-    if (!conf->countme().getValue() || getuid() != 0)
+-        return;
+-
+-    // Bail out if not a remote handle
+-    long local;
+-    handleGetInfo(handle, LRI_LOCAL, &local);
+-    if (local)
+-        return;
+-
+-    // Bail out if no metalink or mirrorlist is defined
+-    auto & metalink = conf->metalink();
+-    auto & mirrorlist = conf->mirrorlist();
+-    if ((metalink.empty()   || metalink.getValue().empty()) &&
+-        (mirrorlist.empty() || mirrorlist.getValue().empty()))
+-        return;
+-
+-    // Load the cookie
+-    std::string fname = getPersistdir() + "/" + COUNTME_COOKIE;
+-    int ver = COUNTME_VERSION;      // file format version (for future use)
+-    time_t epoch = 0;               // position of first-ever counted window
+-    time_t win = COUNTME_OFFSET;    // position of last counted window
+-    int budget = -1;                // budget for this window (-1 = generate)
+-    std::ifstream(fname) >> ver >> epoch >> win >> budget;
+-
+-    // Bail out if the window has not advanced since
+-    time_t now = time(NULL);
+-    time_t delta = now - win;
+-    if (delta < COUNTME_WINDOW) {
+-        logger->debug(tfm::format("countme: no event for %s: window already counted", id));
+-        return;
+-    }
+-
+-    // Evenly distribute the probability of the counting event over the first N
+-    // requests in this window (where N = COUNTME_BUDGET), by defining a random
+-    // "budget" of ordinary requests that we first have to spend.  This ensures
+-    // that no particular request is special and thus no privacy loss is
+-    // incurred by adding the flag within N requests.
+-    if (budget < 0)
+-        budget = numeric::random(1, COUNTME_BUDGET);
+-    budget--;
+-    if (!budget) {
+-        // Budget exhausted, counting!
+-
+-        // Compute the position of this window
+-        win = now - (delta % COUNTME_WINDOW);
+-        if (!epoch)
+-            epoch = win;
+-        // Window step (0 at epoch)
+-        int step = (win - epoch) / COUNTME_WINDOW;
+-
+-        // Compute the bucket we are in
+-        unsigned int i;
+-        for (i = 0; i < COUNTME_BUCKETS.size(); ++i)
+-            if (step < COUNTME_BUCKETS[i])
+-                break;
+-        int bucket = i + 1;  // Buckets are indexed from 1
+-
+-        // Set the flag
+-        std::string flag = "countme=" + std::to_string(bucket);
+-        handleSetOpt(handle, LRO_ONETIMEFLAG, flag.c_str());
+-        logger->debug(tfm::format("countme: event triggered for %s: bucket %i", id, bucket));
+-
+-        // Request a new budget
+-        budget = -1;
+-    } else {
+-        logger->debug(tfm::format("countme: no event for %s: budget to spend: %i", id, budget));
+-    }
+-
+-    // Save the cookie
+-    std::ofstream(fname) << COUNTME_VERSION << " " << epoch << " " << win
+-                         << " " << budget;
+-}
+-
+ // Use metalink to check whether our metadata are still current.
+ bool Repo::Impl::isMetalinkInSync()
+ {
+@@ -1685,10 +1568,9 @@ int PackageTarget::Impl::mirrorFailureCB(void * data, const char * msg, const ch
+ static LrHandle * newHandle(ConfigMain * conf)
+ {
+     LrHandle *h = lr_handle_init();
+-    const char * user_agent = USER_AGENT;
++    handleSetOpt(h, LRO_USERAGENT, USER_AGENT);
+     // see dnf.repo.Repo._handle_new_remote() how to pass
+     if (conf) {
+-        user_agent = conf->user_agent().getValue().c_str();
+         auto minrate = conf->minrate().getValue();
+         handleSetOpt(h, LRO_LOWSPEEDLIMIT, static_cast<long>(minrate));
+ 
+@@ -1726,7 +1608,6 @@ static LrHandle * newHandle(ConfigMain * conf)
+         handleSetOpt(h, LRO_SSLVERIFYHOST, sslverify);
+         handleSetOpt(h, LRO_SSLVERIFYPEER, sslverify);
+     }
+-    handleSetOpt(h, LRO_USERAGENT, user_agent);
+     return h;
+ }
+ 
+diff --git a/libdnf/utils/utils.cpp b/libdnf/utils/utils.cpp
+index 2bb1290d1..35858fe7e 100644
+--- a/libdnf/utils/utils.cpp
++++ b/libdnf/utils/utils.cpp
+@@ -18,7 +18,6 @@ extern "C" {
+ #include <fcntl.h>
+ #include <unistd.h>
+ #include <string.h>
+-#include <random>
+ 
+ namespace libdnf {
+ 
+@@ -313,13 +312,4 @@ void decompress(const char * inPath, const char * outPath, mode_t outMode, const
+ 
+ }
+ 
+-namespace numeric {
+-int random(const int min, const int max) {
+-    std::random_device rd;
+-    std::default_random_engine gen(rd());
+-    std::uniform_int_distribution<int> dist(min, max);
+-    return dist(gen);
+-}
+-}
+-
+ }
+diff --git a/libdnf/utils/utils.hpp b/libdnf/utils/utils.hpp
+index d032dd42b..53471f0f5 100644
+--- a/libdnf/utils/utils.hpp
++++ b/libdnf/utils/utils.hpp
+@@ -68,18 +68,6 @@ std::vector<std::string> getDirContent(const std::string &dirPath);
+ void decompress(const char * inPath, const char * outPath, mode_t outMode, const char * compressType = nullptr);
+ }
+ 
+-namespace numeric {
+-/**
+-* @brief Return a random number in the given range.
+-*
+-* Each possible value has an equal likelihood of being produced.
+-*
+-* @param min  lower bound of the range
+-* @param max  upper bound of the range
+-*/
+-int random(const int min, const int max);
+-}
+-
+ }
+ 
+ #endif //LIBDNF_UTILS_HPP

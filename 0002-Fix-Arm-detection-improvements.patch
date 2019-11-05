@@ -1,0 +1,88 @@
+From f858089c65119500986c6695138590af60a02542 Mon Sep 17 00:00:00 2001
+From: Peter Robinson <pbrobinson@gmail.com>
+Date: Wed, 16 Oct 2019 11:47:43 +0100
+Subject: [PATCH 2/2] Fix Arm detection improvements
+
+The change in 73b0de05a4d2 has caused a number of real world regressions
+on arm32/armhfp/aarch32 users, in particular when running on ARMv8 based
+hardware. There's a number of cases where software can't be installed
+or the OS can't even be installed due to issues around armv7hcnl and
+armv8hcnl. The NEON 'n' extension on ARMv8 hardware is not optional, so
+is assumed as part of the armv8hl rpm. The crypto extensions 'c' are
+optional and their implementation is widely varied, due to this the
+software implementations do run time detection, the detection of this
+functionality and subsquent priortisation of the 'c' extension is
+incorrect, especially where the software could be running in a VM
+or container and hence even in a running instance the underlying
+hardware could concievably change so requiring this as a compile time
+option has proved to be extremely problematic causing massive issues
+with Fedora ARM.
+
+We adjust the detection of NEON 'n' just to happen on ARMv7 where while
+it was implemented it has always been problematic and never really used
+and hence is a legacy implementation detail that needs to be supported
+but in reality the vast majority of NEON optimisation happens at run
+time in libraries where it make a difference.
+
+In the case of the 'c' crypto extenions we have explicitly not added
+this as package management functionality as it's handled effectively
+with run time detection as optimisaiton and as in Fefora has just
+caused regressions and issues.
+
+Fixes RHBZ: https://bugzilla.redhat.com/show_bug.cgi?id=1691430
+
+Signed-off-by: Peter Robinson <pbrobinson@gmail.com>
+---
+ libdnf/hy-util.cpp | 17 +++++------------
+ 1 file changed, 5 insertions(+), 12 deletions(-)
+
+diff --git a/libdnf/hy-util.cpp b/libdnf/hy-util.cpp
+index 61838cc3..295fdc1b 100644
+--- a/libdnf/hy-util.cpp
++++ b/libdnf/hy-util.cpp
+@@ -36,20 +36,13 @@
+ 
+ #include <memory>
+ 
+-/* ARM specific HWCAP defines may be missing on non-ARM devices,
+- * AT_HWCAP2 is missing on old glibc (<2.18) */
+-#ifndef AT_HWCAP2
+-#define AT_HWCAP2	26
+-#endif
++/* ARM specific HWCAP defines may be missing on non-ARM devices */
+ #ifndef HWCAP_ARM_VFP
+ #define HWCAP_ARM_VFP	(1<<6)
+ #endif
+ #ifndef HWCAP_ARM_NEON
+ #define HWCAP_ARM_NEON	(1<<12)
+ #endif
+-#ifndef HWCAP2_AES
+-#define HWCAP2_AES	(1<<0)
+-#endif
+ 
+ const char *
+ hy_chksum_name(int chksum_type)
+@@ -111,16 +104,16 @@ hy_detect_arch(char **arch)
+     if (!strncmp(un.machine, "armv", 4)) {
+         /* un.machine is armvXE, where X is version number and E is
+          * endianness (b or l); we need to add modifiers such as
+-         * h (hardfloat), n (neon), c (crypto extensions) */
++         * h (hardfloat), n (neon). Neon is a requirement of armv8 so
++         * as far as rpm is concerned armv8l is the equivilent of armv7hnl
++         * (or 7hnb) so we don't explicitly add 'n' for 8+ as it's expected. */
+         char endian = un.machine[strlen(un.machine)-1];
+         char *modifier = un.machine + 5;
+         while(isdigit(*modifier)) /* keep armv7, armv8, armv9, armv10, armv100, ... */
+             modifier++;
+         if (getauxval(AT_HWCAP) & HWCAP_ARM_VFP)
+             *modifier++ = 'h';
+-        if (getauxval(AT_HWCAP2) & HWCAP2_AES)
+-            *modifier++ = 'c';
+-        if (getauxval(AT_HWCAP) & HWCAP_ARM_NEON)
++        if ((atoi(un.machine+4) == 7) && (getauxval(AT_HWCAP) & HWCAP_ARM_NEON))
+             *modifier++ = 'n';
+         *modifier++ = endian;
+         *modifier = 0;
+-- 
+2.23.0
+

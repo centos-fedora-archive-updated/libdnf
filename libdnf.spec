@@ -1,8 +1,19 @@
-%global libsolv_version 0.7.4-1
+%global libsolv_version 0.7.7
 %global libmodulemd_version 1.6.1
-%global librepo_version 1.10.0
-%global dnf_conflict 4.2.11
+%global librepo_version 1.11.0
+%global dnf_conflict 4.2.13
 %global swig_version 3.0.12
+
+# set sphinx package name according to distro
+%global requires_python2_sphinx python2-sphinx
+%global requires_python3_sphinx python3-sphinx
+%if 0%{?rhel} == 7
+    %global requires_python2_sphinx python-sphinx
+%endif
+%if 0%{?suse_version}
+    %global requires_python2_sphinx python2-Sphinx
+    %global requires_python3_sphinx python3-Sphinx
+%endif
 
 %bcond_with valgrind
 
@@ -11,12 +22,6 @@
 %bcond_with python3
 %else
 %bcond_without python3
-%endif
-
-%if 0%{?rhel}
-    %global rpm_version 4.14.2
-%else
-    %global rpm_version 4.14.2.1-4
 %endif
 
 %if 0%{?rhel} > 7 || 0%{?fedora} > 29
@@ -43,24 +48,20 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.35.5
-Release:        5%{?dist}
+Version:        0.37.2
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
-# Do not the change of include skip_if_unavailable fedault to false for Fedora < 31
-# https://fedoraproject.org/wiki/Changes/Set_skip_if_unavailable_default_to_false
-Patch0002:      0002-Revert-Set-default-to-skip_if_unavailablefalse-RhBug1679509.patch
 # This change is not approved in F30 (https://fedoraproject.org/wiki/Changes/DNF_Better_Counting)
-Patch0003:      0003-Revert-countme.patch
-Patch0004:      0004-Fix-leaking-log-handlers-in-Sack.patch
-Patch0005:      0001-Add-module-reset-function-into-dnf_context.patch
-Patch0006:      0001-Make-changes-in-dnf_context_reset_modules-permanent.patch
+Patch0001:      0001-Revert-countme.patch
 # Fix a crash in the above patch when module repos are disabled
 # https://github.com/rpm-software-management/libdnf/pull/834
-Patch0007:      0001-Handle-NoModuleException-in-dnf_context_reset_module.patch
+Patch0002:      0001-Handle-NoModuleException-in-dnf_context_reset_module.patch
+# Fixes issues on arm such as RhBug:1562084 (RhBug: 1691430)
+Patch0003:      0001-Revert-hy_detect_arch-detect-crypto-only-on-arm-vers.patch
+Patch0004:      0002-Fix-Arm-detection-improvements.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -73,7 +74,7 @@ BuildRequires:  valgrind
 %endif
 BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.46.0
 BuildRequires:  pkgconfig(gtk-doc)
-BuildRequires:  rpm-devel >= %{rpm_version}
+BuildRequires:  rpm-devel >= 4.11.0
 %if %{with rhsm}
 BuildRequires:  pkgconfig(librhsm) >= 0.0.3
 %endif
@@ -120,11 +121,12 @@ Development files for %{name}.
 Summary:        Python 2 bindings for the libdnf library.
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 BuildRequires:  python2-devel
+%if !0%{?mageia}
+BuildRequires:  %{requires_python2_sphinx}
+%endif
 %if 0%{?rhel} == 7
-BuildRequires:  python-sphinx
 BuildRequires:  swig3 >= %{swig_version}
 %else
-BuildRequires:  python2-sphinx
 BuildRequires:  swig >= %{swig_version}
 %endif
 
@@ -138,7 +140,7 @@ Python 2 bindings for the libdnf library.
 Summary:        Python 3 bindings for the libdnf library.
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 BuildRequires:  python3-devel
-BuildRequires:  python3-sphinx
+BuildRequires:  %{requires_python3_sphinx}
 BuildRequires:  swig >= %{swig_version}
 
 %description -n python3-%{name}
@@ -196,27 +198,29 @@ mkdir build-py3
 %build
 %if %{with python2}
 pushd build-py2
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{_cmake_opts}
+  %if 0%{?mageia} || 0%{?suse_version}
+    cd ..
+    %define _cmake_builddir build-py2
+    %define __builddir build-py2
+  %endif
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 %endif # with python2
 
 %if %{with python3}
 pushd build-py3
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{_cmake_opts}
+  %if 0%{?mageia} || 0%{?suse_version}
+    cd ..
+    %define _cmake_builddir build-py3
+    %define __builddir build-py3
+  %endif
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 %endif
 
 %check
-if [ "$(id -u)" == "0" ] ; then
-        cat <<ERROR 1>&2
-Package tests cannot be run under superuser account.
-Please build the package as non-root user.
-ERROR
-        exit 1
-fi
-
 %if %{with python2}
 pushd build-py2
   make ARGS="-V" test
@@ -252,7 +256,7 @@ popd
 
 %find_lang %{name}
 
-%if 0%{?rhel} && 0%{?rhel} <= 7
+%if (0%{?rhel} && 0%{?rhel} <= 7) || 0%{?suse_version}
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
 %else
@@ -294,6 +298,24 @@ popd
 %endif
 
 %changelog
+* Wed Nov 06 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-1
+- Update to 0.37.2
+- Use more descriptive message when failed to retrieve GPG key (RhBug:1605117)
+- Add removeMetadataTypeFromDownload function to the API
+- Context part of libdnf can now read vars (urlvars) from dirs and environment
+- Throw exception immediately if file cannot be opened
+- Add test when there is no primary metadata in compatible format (RhBug:1744960)
+- Various improvements to countme features
+- Don't abort on rpmdb checksum calculation failure
+- Enable module dependency trees when using set_modules_enabled_by_pkgset() (RhBug:1762314)
+- New method "Query::filterSubject()", replaces Solution::getBestSolution()
+- The Solution class was removed
+- Add query argument into get_best_query and get_best_solution
+- Add module reset function into dnf_context
+- Add method to get all repository metadata locations
+- Catch NoModuleException in case of not existent value was used in persistor (RhBug:1761773)
+- Fixes for some issues on Arm platforms (RhBug:1691430)
+
 * Mon Nov 04 2019 Adam Williamson <awilliam@redhat.com> - 0.35.5-5
 - Fix crash in module reset if module repos disabled (RhBug:1767453)
 

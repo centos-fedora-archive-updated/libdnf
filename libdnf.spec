@@ -1,8 +1,19 @@
-%global libsolv_version 0.7.4-1
+%global libsolv_version 0.7.7
 %global libmodulemd_version 1.6.1
-%global librepo_version 1.10.0
-%global dnf_conflict 4.2.9-3
+%global librepo_version 1.11.0
+%global dnf_conflict 4.2.13
 %global swig_version 3.0.12
+
+# set sphinx package name according to distro
+%global requires_python2_sphinx python2-sphinx
+%global requires_python3_sphinx python3-sphinx
+%if 0%{?rhel} == 7
+    %global requires_python2_sphinx python-sphinx
+%endif
+%if 0%{?suse_version}
+    %global requires_python2_sphinx python2-Sphinx
+    %global requires_python3_sphinx python3-Sphinx
+%endif
 
 %bcond_with valgrind
 
@@ -11,12 +22,6 @@
 %bcond_with python3
 %else
 %bcond_without python3
-%endif
-
-%if 0%{?rhel}
-    %global rpm_version 4.14.2
-%else
-    %global rpm_version 4.14.2.1-4
 %endif
 
 %if 0%{?rhel} > 7 || 0%{?fedora} > 29
@@ -43,21 +48,12 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.35.3
-Release:        6%{?dist}
+Version:        0.37.2
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-Patch0001:      0001-Revert-9309e92332241ff1113433057c969cebf127734e.patch
-# Temporary patch to not fail on modular RPMs without modular metadata
-# until the infrastructure is ready
-Patch0002:      0002-Revert-consequences-of-Fail-Safe-mechanism.patch
-Patch0003:      0004-Mark-job-goalupgrade-with-sltr-as-targeted.patch
-Patch0004:      0005-Apply-targeted-upgrade-only-for-selector-with-packages.patch
-# Temporary until patch is upstreamed
-# https://bugzilla.redhat.com/show_bug.cgi?id=1739867
-Patch0005:      libdnf-0.35-fix-zchunk.patch
 # Fixes issues on arm such as RhBug:1562084 (RhBug: 1691430)
 Patch0006:      0006-Fixes-for-some-issues-on-Arm-platforms.patch
 
@@ -72,7 +68,7 @@ BuildRequires:  valgrind
 %endif
 BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.46.0
 BuildRequires:  pkgconfig(gtk-doc)
-BuildRequires:  rpm-devel >= %{rpm_version}
+BuildRequires:  rpm-devel >= 4.11.0
 %if %{with rhsm}
 BuildRequires:  pkgconfig(librhsm) >= 0.0.3
 %endif
@@ -119,11 +115,12 @@ Development files for %{name}.
 Summary:        Python 2 bindings for the libdnf library.
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 BuildRequires:  python2-devel
+%if !0%{?mageia}
+BuildRequires:  %{requires_python2_sphinx}
+%endif
 %if 0%{?rhel} == 7
-BuildRequires:  python-sphinx
 BuildRequires:  swig3 >= %{swig_version}
 %else
-BuildRequires:  python2-sphinx
 BuildRequires:  swig >= %{swig_version}
 %endif
 
@@ -137,7 +134,7 @@ Python 2 bindings for the libdnf library.
 Summary:        Python 3 bindings for the libdnf library.
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 BuildRequires:  python3-devel
-BuildRequires:  python3-sphinx
+BuildRequires:  %{requires_python3_sphinx}
 BuildRequires:  swig >= %{swig_version}
 
 %description -n python3-%{name}
@@ -195,6 +192,11 @@ mkdir build-py3
 %build
 %if %{with python2}
 pushd build-py2
+  %if 0%{?mageia} || 0%{?suse_version}
+    cd ..
+    %define _cmake_builddir build-py2
+    %define __builddir build-py2
+  %endif
   %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
@@ -202,31 +204,36 @@ popd
 
 %if %{with python3}
 pushd build-py3
+  %if 0%{?mageia} || 0%{?suse_version}
+    cd ..
+    %define _cmake_builddir build-py3
+    %define __builddir build-py3
+  %endif
   %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
   %make_build
 popd
 %endif
 
 %check
-if [ "$(id -u)" == "0" ] ; then
-        cat <<ERROR 1>&2
-Package tests cannot be run under superuser account.
-Please build the package as non-root user.
-ERROR
-        exit 1
-fi
-
 %if %{with python2}
 pushd build-py2
   make ARGS="-V" test
 popd
 %endif # with python2
 %if %{with python3}
-# Run just the Python tests, not all of them, since
-# we have coverage of the core from the first build
+# If we didn't run the general tests yet, do it now.
+%if %{without python2}
+pushd build-py3
+  make ARGS="-V" test
+popd
+%else
+# Otherwise, run just the Python tests, not all of
+# them, since we have coverage of the core from the
+# first build
 pushd build-py3/python/hawkey/tests
   make ARGS="-V" test
 popd
+%endif
 %endif
 
 %install
@@ -243,7 +250,7 @@ popd
 
 %find_lang %{name}
 
-%if 0%{?rhel} && 0%{?rhel} <= 7
+%if (0%{?rhel} && 0%{?rhel} <= 7) || 0%{?suse_version}
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
 %else
@@ -285,6 +292,36 @@ popd
 %endif
 
 %changelog
+* Wed Nov 06 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-1
+- Update to 0.37.2
+- Fix crash in PackageKit (RhBug:1636803)
+- Do not create @System.solv files (RhBug:1707995)
+- Set LRO_CACHEDIR so zchunk works again (RhBug:1739867)
+- Don't reinstall modified packages with the same NEVRA (RhBug:1644241)
+- Fix bug when moving temporary repository metadata after download (RhBug:1700341)
+- Improve detection of extras packages by comparing (name, arch) pair instead of full NEVRA (RhBuh:1684517)
+- Improve handling multilib packages in the history command (RhBug:1728637)
+- Repo download: use full error description into the exception text (RhBug:1741442)
+- Properly close hawkey.log (RhBug:1594016)
+- Fix dnf updateinfo --update to not list advisories for packages updatable only from non-enabled modules
+- Apply modular filtering by package name (RhBug:1702729)
+- Fully enable the modular fail safe mechanism (RhBug:1616167)
+- Use more descriptive message when failed to retrieve GPG key (RhBug:1605117)
+- Add removeMetadataTypeFromDownload function to the API
+- Context part of libdnf can now read vars (urlvars) from dirs and environment
+- Throw exception immediately if file cannot be opened
+- Add test when there is no primary metadata in compatible format (RhBug:1744960)
+- Various improvements to countme features
+- Don't abort on rpmdb checksum calculation failure
+- Enable module dependency trees when using set_modules_enabled_by_pkgset() (RhBug:1762314)
+- Resolve problem with --best and search in provides (RhBug:1737469)
+- New method "Query::filterSubject()", replaces Solution::getBestSolution()
+- The Solution class was removed
+- Add query argument into get_best_query and get_best_solution
+- Add module reset function into dnf_context
+- Add method to get all repository metadata locations
+- Catch NoModuleException in case of not existent value was used in persistor (RhBug:1761773)
+
 * Mon Oct 21 2019 Ales Matej <amatej@gmail.com> - 0.35.3-6
 - Fixes for some issues on Arm platforms (RhBug:1691430) 
 

@@ -49,13 +49,15 @@
 
 Name:           libdnf
 Version:        0.37.2
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0001:      0001-Revert-hy_detect_arch-detect-crypto-only-on-arm-vers.patch
 Patch0002:      0002-Fix-Arm-detection-improvements.patch
+# https://github.com/rpm-software-management/libdnf/pull/836
+Patch0003:      0003-Fix-use-with-src-in-hy_subject_get_best_solution.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -292,6 +294,9 @@ popd
 %endif
 
 %changelog
+* Wed Nov 13 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-2
+- Fix accidental code removal from hy_subject_get_best_solution()
+
 * Wed Nov 06 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-1
 - Update to 0.37.2
 - Use more descriptive message when failed to retrieve GPG key (RhBug:1605117)

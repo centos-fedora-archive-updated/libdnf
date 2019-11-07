@@ -49,13 +49,15 @@
 
 Name:           libdnf
 Version:        0.37.2
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 # Fixes issues on arm such as RhBug:1562084 (RhBug: 1691430)
-Patch0006:      0006-Fixes-for-some-issues-on-Arm-platforms.patch
+Patch0001:      0001-Fixes-for-some-issues-on-Arm-platforms.patch
+# https://github.com/rpm-software-management/libdnf/pull/836
+Patch0002:      0002-Fix-use-with-src-in-hy_subject_get_best_solution.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -292,6 +294,9 @@ popd
 %endif
 
 %changelog
+* Mon Nov 11 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-2
+- Fix accidental code removal from hy_subject_get_best_solution()
+
 * Wed Nov 06 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-1
 - Update to 0.37.2
 - Fix crash in PackageKit (RhBug:1636803)

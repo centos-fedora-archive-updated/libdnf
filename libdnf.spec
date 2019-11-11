@@ -49,7 +49,7 @@
 
 Name:           libdnf
 Version:        0.37.2
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -62,6 +62,8 @@ Patch0002:      0001-Handle-NoModuleException-in-dnf_context_reset_module.patch
 # Fixes issues on arm such as RhBug:1562084 (RhBug: 1691430)
 Patch0003:      0001-Revert-hy_detect_arch-detect-crypto-only-on-arm-vers.patch
 Patch0004:      0002-Fix-Arm-detection-improvements.patch
+# https://github.com/rpm-software-management/libdnf/pull/836
+Patch0005:      0005-Fix-use-with_src-in-hy_subject_get_best_solution.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -298,6 +300,9 @@ popd
 %endif
 
 %changelog
+* Mon Nov 11 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-2
+- Fix accidental code removal from hy_subject_get_best_solution()
+
 * Wed Nov 06 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-1
 - Update to 0.37.2
 - Use more descriptive message when failed to retrieve GPG key (RhBug:1605117)

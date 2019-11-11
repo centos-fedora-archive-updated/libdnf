@@ -32,7 +32,7 @@
 
 Name:           libdnf
 Version:        0.31.0
-Release:        9%{?dist}
+Release:        10%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -58,6 +58,8 @@ Patch0014:      0001-Make-changes-in-dnf_context_reset_modules-permanent.patch
 # Fix a crash in the above patch when module repos are disabled
 # https://github.com/rpm-software-management/libdnf/pull/834
 Patch0015:      0001-Handle-NoModuleException-in-dnf_context_reset_module.patch
+# Do not use shared_ptr for modulemd prioritizer (RhBug:1636803) 
+Patch0016:      0012-Remove-remaining-shared_ptr.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -268,6 +270,9 @@ popd
 %endif
 
 %changelog
+* Mon Nov 11 2019 Ales Matej <amatej@redhat.com> - 0.31.0-10
+- Do not use shared_ptr for modulemd prioritizer, fixes packagekit (RhBug:1636803) 
+
 * Mon Nov 04 2019 Adam Williamson <awilliam@redhat.com> - 0.31.0-9
 - Fix crash in module reset if module repos disabled (RhBug:1767453)
 

@@ -48,22 +48,14 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.37.2
-Release:        2%{?dist}
+Version:        0.39.1
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 # This change is not approved in F30 (https://fedoraproject.org/wiki/Changes/DNF_Better_Counting)
 Patch0001:      0001-Revert-countme.patch
-# Fix a crash in the above patch when module repos are disabled
-# https://github.com/rpm-software-management/libdnf/pull/834
-Patch0002:      0001-Handle-NoModuleException-in-dnf_context_reset_module.patch
-# Fixes issues on arm such as RhBug:1562084 (RhBug: 1691430)
-Patch0003:      0001-Revert-hy_detect_arch-detect-crypto-only-on-arm-vers.patch
-Patch0004:      0002-Fix-Arm-detection-improvements.patch
-# https://github.com/rpm-software-management/libdnf/pull/836
-Patch0005:      0005-Fix-use-with_src-in-hy_subject_get_best_solution.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -300,6 +292,16 @@ popd
 %endif
 
 %changelog
+* Fri Nov 29 2019 Ales Matej <amatej@redhat.com> - 0.39.1-1
+- Update to 0.39.1
+- Report reason how package was excluded (RhBug:1649754)
+- Additional Arm detection improvements (RhBug:1691430)
+- Set skip_if_unavailable for media repos to skip their update (RhBug:1716067)
+- Add support of xml:base for remote and local url in context (RhBug:1734350, 1717865)
+- Handle NoModuleException in dnf_context_reset_modules (RhBug:1767453)
+- Add missing C function hy_nevra_free() for HyNevra deallocation
+- Context part of libdnf now uses metadata_expire from global configuration 
+
 * Mon Nov 11 2019 Pavla Kratochvilova <pkratoch@redhat.com> - 0.37.2-2
 - Fix accidental code removal from hy_subject_get_best_solution()
 

@@ -3,6 +3,9 @@
 %global librepo_version 1.11.0
 %global dnf_conflict 4.2.13
 %global swig_version 3.0.12
+%global libdnf_major_version 0
+%global libdnf_minor_version 43
+%global libdnf_micro_version 1
 
 # set sphinx package name according to distro
 %global requires_python2_sphinx python2-sphinx
@@ -48,7 +51,7 @@
     %{nil}
 
 Name:           libdnf
-Version:        0.39.1
+Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
 Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
@@ -197,7 +200,7 @@ pushd build-py2
     %define _cmake_builddir build-py2
     %define __builddir build-py2
   %endif
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts} -DLIBDNF_MAJOR_VERSION=%{libdnf_major_version} -DLIBDNF_MINOR_VERSION=%{libdnf_minor_version} -DLIBDNF_MICRO_VERSION=%{libdnf_micro_version}
   %make_build
 popd
 %endif # with python2
@@ -209,7 +212,7 @@ pushd build-py3
     %define _cmake_builddir build-py3
     %define __builddir build-py3
   %endif
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts} -DLIBDNF_MAJOR_VERSION=%{libdnf_major_version} -DLIBDNF_MINOR_VERSION=%{libdnf_minor_version} -DLIBDNF_MICRO_VERSION=%{libdnf_micro_version}
   %make_build
 popd
 %endif
@@ -292,6 +295,19 @@ popd
 %endif
 
 %changelog
+* Wed Jan 15 2020 Ales Matej <amatej@redhat.com> - 0.43.1-1
+- Allow excluding packages with "excludepkgs" and globs
+- Add two new query filters: obsoletes_by_priority, upgrades_by_priority
+- [context] Use installonly_limit from global config (RhBug:1256108)
+- [context] Add API to get/set "install_weak_deps"
+- [context] Add wildcard support for repo_id in dnf_context_repo_enable/disable (RhBug:1781420)
+- [context] Adds support for includepkgs in repository configuration.
+- [context] Adds support for excludepkgs, exclude, includepkgs, and disable_excludes in main configuration.
+- [context] Added function dnf_transaction_set_dont_solve_goal
+- [context] Added functions dnf_context_get/set_config_file_path
+- [context] Respect "plugins" global conf value
+- [context] Add API to disable/enable plugins
+
 * Fri Nov 29 2019 Ales Matej <amatej@redhat.com> - 0.39.1-1
 - Update to 0.39.1
 - Report reason how package was excluded (RhBug:1649754)

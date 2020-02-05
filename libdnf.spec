@@ -52,11 +52,15 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+# https://github.com/rpm-software-management/libdnf/pull/887
+# Fixes a crash sometimes encountered in Cockpit:
+# https://bugzilla.redhat.com/show_bug.cgi?id=1795004
+Patch0:         887.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -293,6 +297,9 @@ popd
 %endif
 
 %changelog
+* Tue Feb 04 2020 Adam Williamson <adamwill@fedoraproject.org> - 0.43.1-3
+- [context] Create new repo instead of reusing old one (RhBug:1795004)
+
 * Wed Jan 29 2020 Fedora Release Engineering <releng@fedoraproject.org> - 0.43.1-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
 

@@ -52,13 +52,17 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 # This change is not approved in F30 (https://fedoraproject.org/wiki/Changes/DNF_Better_Counting)
 Patch0001:      0001-Revert-countme.patch
+# https://github.com/rpm-software-management/libdnf/pull/887
+# Fixes a crash sometimes encountered in Cockpit:
+# https://bugzilla.redhat.com/show_bug.cgi?id=1795004
+Patch0002:      887.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -295,6 +299,9 @@ popd
 %endif
 
 %changelog
+* Thu Feb 06 2020 Ales Matej <amatej@redhat.org> - 0.43.1-2
+- [context] Create new repo instead of reusing old one (RhBug:1795004)
+
 * Wed Jan 15 2020 Ales Matej <amatej@redhat.com> - 0.43.1-1
 - Allow excluding packages with "excludepkgs" and globs
 - Add two new query filters: obsoletes_by_priority, upgrades_by_priority

@@ -52,7 +52,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -299,6 +299,9 @@ popd
 %endif
 
 %changelog
+* Tue Feb 11 2020 Adam Williamson <awilliam@redhat.com> - 0.43.1-3
+- Rebuild against swig with a bug fix (RhBug:1798389)
+
 * Thu Feb 06 2020 Ales Matej <amatej@redhat.org> - 0.43.1-2
 - [context] Create new repo instead of reusing old one (RhBug:1795004)
 

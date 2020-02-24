@@ -1,11 +1,11 @@
 %global libsolv_version 0.7.7
-%global libmodulemd_version 1.6.1
+%global libmodulemd_version 2.5.0
 %global librepo_version 1.11.0
 %global dnf_conflict 4.2.13
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 43
-%global libdnf_micro_version 1
+%global libdnf_minor_version 45
+%global libdnf_micro_version 0
 
 # set sphinx package name according to distro
 %global requires_python2_sphinx python2-sphinx
@@ -52,15 +52,11 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        3%{?dist}
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-# https://github.com/rpm-software-management/libdnf/pull/887
-# Fixes a crash sometimes encountered in Cockpit:
-# https://bugzilla.redhat.com/show_bug.cgi?id=1795004
-Patch0:         887.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -84,7 +80,7 @@ BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)
 BuildRequires:  pkgconfig(cppunit)
 BuildRequires:  pkgconfig(libcrypto)
-BuildRequires:  pkgconfig(modulemd) >= %{libmodulemd_version}
+BuildRequires:  pkgconfig(modulemd-2.0) >= %{libmodulemd_version}
 BuildRequires:  pkgconfig(smartcols)
 BuildRequires:  gettext
 BuildRequires:  gpgme-devel
@@ -297,6 +293,17 @@ popd
 %endif
 
 %changelog
+* Mon Feb 24 2020 Ales Matej <amatej@redhat.com> - 0.45.0-1
+- Config options: only first empty value clears existing (RhBug:1788154)
+- Make parsing of reldeps more strict (RhBug:1788107)
+- [context] Support repositories defined in main configuration file
+- Fix filtering packages by advisory when more versions and arches are available (RhBug:1770125)
+- Add expanding solvable provides for dependency matching (RhBug:1534123)
+- DnfRepo: fix module_hotfixes keyfile priority level
+- Add custom exceptions to libdnf interface
+- [conf] Set useful default colors when color is enabled
+- Port to libmodulemd-2 API (RhBug:1693683)
+
 * Tue Feb 04 2020 Adam Williamson <adamwill@fedoraproject.org> - 0.43.1-3
 - [context] Create new repo instead of reusing old one (RhBug:1795004)
 

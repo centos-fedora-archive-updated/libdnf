@@ -1,0 +1,26 @@
+From 12f28f2e9e5f48edf2ef53d467516c1788b64f46 Mon Sep 17 00:00:00 2001
+From: Jaroslav Mracek <jmracek@redhat.com>
+Date: Fri, 6 Mar 2020 08:23:45 +0100
+Subject: [PATCH] Reset active modules when no module enabled or default
+ (RhBug:1767351)
+
+It resolves problem when all modules are still active after reset of all
+modules.
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1767351
+---
+ libdnf/module/ModulePackageContainer.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libdnf/module/ModulePackageContainer.cpp b/libdnf/module/ModulePackageContainer.cpp
+index 542adc342..9e8cf2fef 100644
+--- a/libdnf/module/ModulePackageContainer.cpp
++++ b/libdnf/module/ModulePackageContainer.cpp
+@@ -606,6 +606,7 @@ ModulePackageContainer::Impl::moduleSolve(const std::vector<ModulePackage *> & m
+     bool debugSolver)
+ {
+     if (modules.empty()) {
++        activatedModules.reset();
+         return {};
+     }
+     dnf_sack_recompute_considered(moduleSack);

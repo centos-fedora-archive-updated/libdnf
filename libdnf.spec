@@ -52,7 +52,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -61,6 +61,8 @@ Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 # Fixes a crash sometimes encountered in Cockpit:
 # https://bugzilla.redhat.com/show_bug.cgi?id=1795004
 Patch0:         887.patch
+# Until https://github.com/rpm-software-management/libdnf/pull/910 is released
+Patch1:         Reset-active-modules-when-no-module-enabled-or-default-RhBug-1767351.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -297,6 +299,9 @@ popd
 %endif
 
 %changelog
+* Fri Mar 06 2020 Ales Matej <amatej@redhat.com> - 0.43.1-3
+- Backport patch to reset active modules when no module enabled or default (1767351)
+
 * Tue Feb 04 2020 Adam Williamson <adamwill@fedoraproject.org> - 0.43.1-2
 - [context] Create new repo instead of reusing old one (RhBug:1795004)
 

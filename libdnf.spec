@@ -52,7 +52,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        3%{?dist}
+Release:        5%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -63,6 +63,8 @@ Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0:         887.patch
 # Until https://github.com/rpm-software-management/libdnf/pull/910 is released
 Patch1:         Reset-active-modules-when-no-module-enabled-or-default-RhBug-1767351.patch
+
+Patch2:         0001-Add-new-function-to-reset-all-modules-in-C-API.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -133,7 +135,7 @@ BuildRequires:  swig >= %{swig_version}
 
 %description -n python2-%{name}
 Python 2 bindings for the libdnf library.
-%endif # with python2
+%endif
 
 %if %{with python3}
 %package -n python3-%{name}
@@ -167,7 +169,7 @@ Conflicts:      python-dnf < %{dnf_conflict}
 
 %description -n python2-hawkey
 Python 2 bindings for the hawkey library.
-%endif # with python2
+%endif
 
 %if %{with python3}
 %package -n python3-hawkey
@@ -191,7 +193,7 @@ Python 3 bindings for the hawkey library.
 %autosetup -p1
 %if %{with python2}
 mkdir build-py2
-%endif # with python2
+%endif
 %if %{with python3}
 mkdir build-py3
 %endif
@@ -207,7 +209,7 @@ pushd build-py2
   %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts} -DLIBDNF_MAJOR_VERSION=%{libdnf_major_version} -DLIBDNF_MINOR_VERSION=%{libdnf_minor_version} -DLIBDNF_MICRO_VERSION=%{libdnf_micro_version}
   %make_build
 popd
-%endif # with python2
+%endif
 
 %if %{with python3}
 pushd build-py3
@@ -226,7 +228,7 @@ popd
 pushd build-py2
   make ARGS="-V" test
 popd
-%endif # with python2
+%endif
 %if %{with python3}
 # If we didn't run the general tests yet, do it now.
 %if %{without python2}
@@ -248,7 +250,7 @@ popd
 pushd build-py2
   %make_install
 popd
-%endif # with python2
+%endif
 %if %{with python3}
 pushd build-py3
   %make_install
@@ -281,7 +283,7 @@ popd
 %if %{with python2}
 %files -n python2-%{name}
 %{python2_sitearch}/%{name}/
-%endif # with python2
+%endif
 
 %if %{with python3}
 %files -n python3-%{name}
@@ -291,7 +293,7 @@ popd
 %if %{with python2}
 %files -n python2-hawkey
 %{python2_sitearch}/hawkey/
-%endif # with python2
+%endif
 
 %if %{with python3}
 %files -n python3-hawkey
@@ -299,6 +301,9 @@ popd
 %endif
 
 %changelog
+* Thu Mar 12 2020 Stephen Gallagher <sgallagh@redhat.com> - 0.43.1-5
+- Backport new API for resetting all modules
+
 * Fri Mar 06 2020 Ales Matej <amatej@redhat.com> - 0.43.1-3
 - Backport patch to reset active modules when no module enabled or default (1767351)
 

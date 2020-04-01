@@ -1,11 +1,11 @@
 %global libsolv_version 0.7.7
-%global libmodulemd_version 1.6.1
-%global librepo_version 1.11.0
+%global libmodulemd_version 2.5.0
+%global librepo_version 1.11.3
 %global dnf_conflict 4.2.13
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 43
-%global libdnf_micro_version 1
+%global libdnf_minor_version 47
+%global libdnf_micro_version 0
 
 # set sphinx package name according to distro
 %global requires_python2_sphinx python2-sphinx
@@ -52,19 +52,11 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        5%{?dist}
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-# https://github.com/rpm-software-management/libdnf/pull/887
-# Fixes a crash sometimes encountered in Cockpit:
-# https://bugzilla.redhat.com/show_bug.cgi?id=1795004
-Patch0:         887.patch
-# Until https://github.com/rpm-software-management/libdnf/pull/910 is released
-Patch1:         Reset-active-modules-when-no-module-enabled-or-default-RhBug-1767351.patch
-
-Patch2:         0001-Add-new-function-to-reset-all-modules-in-C-API.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -88,7 +80,7 @@ BuildRequires:  pkgconfig(sqlite3)
 BuildRequires:  pkgconfig(json-c)
 BuildRequires:  pkgconfig(cppunit)
 BuildRequires:  pkgconfig(libcrypto)
-BuildRequires:  pkgconfig(modulemd) >= %{libmodulemd_version}
+BuildRequires:  pkgconfig(modulemd-2.0) >= %{libmodulemd_version}
 BuildRequires:  pkgconfig(smartcols)
 BuildRequires:  gettext
 BuildRequires:  gpgme-devel
@@ -135,7 +127,7 @@ BuildRequires:  swig >= %{swig_version}
 
 %description -n python2-%{name}
 Python 2 bindings for the libdnf library.
-%endif
+%endif # with python2
 
 %if %{with python3}
 %package -n python3-%{name}
@@ -169,7 +161,7 @@ Conflicts:      python-dnf < %{dnf_conflict}
 
 %description -n python2-hawkey
 Python 2 bindings for the hawkey library.
-%endif
+%endif # with python2
 
 %if %{with python3}
 %package -n python3-hawkey
@@ -193,7 +185,7 @@ Python 3 bindings for the hawkey library.
 %autosetup -p1
 %if %{with python2}
 mkdir build-py2
-%endif
+%endif # with python2
 %if %{with python3}
 mkdir build-py3
 %endif
@@ -209,7 +201,7 @@ pushd build-py2
   %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts} -DLIBDNF_MAJOR_VERSION=%{libdnf_major_version} -DLIBDNF_MINOR_VERSION=%{libdnf_minor_version} -DLIBDNF_MICRO_VERSION=%{libdnf_micro_version}
   %make_build
 popd
-%endif
+%endif # with python2
 
 %if %{with python3}
 pushd build-py3
@@ -228,7 +220,7 @@ popd
 pushd build-py2
   make ARGS="-V" test
 popd
-%endif
+%endif # with python2
 %if %{with python3}
 # If we didn't run the general tests yet, do it now.
 %if %{without python2}
@@ -250,7 +242,7 @@ popd
 pushd build-py2
   %make_install
 popd
-%endif
+%endif # with python2
 %if %{with python3}
 pushd build-py3
   %make_install
@@ -283,7 +275,7 @@ popd
 %if %{with python2}
 %files -n python2-%{name}
 %{python2_sitearch}/%{name}/
-%endif
+%endif # with python2
 
 %if %{with python3}
 %files -n python3-%{name}
@@ -293,7 +285,7 @@ popd
 %if %{with python2}
 %files -n python2-hawkey
 %{python2_sitearch}/hawkey/
-%endif
+%endif # with python2
 
 %if %{with python3}
 %files -n python3-hawkey
@@ -301,6 +293,34 @@ popd
 %endif
 
 %changelog
+* Wed Apr 01 2020 Ales Matej <amatej@redhat.com> - 0.47.0-1
+- Update to 0.47.0
+- Add prereq_ignoreinst & regular_requires properties for pkg (RhBug:1543449)
+- Reset active modules when no module enabled or default (RhBug:1767351)
+- Add comment option to transaction (RhBug:1773679)
+- Failing to get module defauls is a recoverable error
+- Baseurl is not exclusive with mirrorlist/metalink (RhBug: 1775184)
+- Add new function to reset all modules in C API (dnf_context_reset_all_modules)
+- [context] Fix to preserve additionalMetadata content (RhBug:1808677)
+- Fix filtering of DepSolvables with source rpms (RhBug:1812596)
+- Add setter for running kernel protection setting
+- Handle situation when an unprivileged user cannot create history database (RhBug:1634385)
+- Add query filter: latest by priority
+- Add DNF_NO_PROTECTED flag to allow empty list of protected packages
+- Remove 'dim' option from terminal colors to make them more readable (RhBug:1807774,1814563)
+- [context] Error when main config file can't be opened (RhBug:1794864)
+- [context] Add function function dnf_context_is_set_config_file_path
+- Config options: only first empty value clears existing (RhBug:1788154)
+- Make parsing of reldeps more strict (RhBug:1788107)
+- [context] Support repositories defined in main configuration file
+- Fix filtering packages by advisory when more versions and arches are available (RhBug:1770125)
+- Add expanding solvable provides for dependency matching (RhBug:1534123)
+- DnfRepo: fix module_hotfixes keyfile priority level
+- Add custom exceptions to libdnf interface
+- [conf] Set useful default colors when color is enabled
+- Port to libmodulemd-2 API (RhBug:1693683)
+- [context] Create new repo instead of reusing old one (RhBug:1795004)
+
 * Thu Mar 12 2020 Stephen Gallagher <sgallagh@redhat.com> - 0.43.1-5
 - Backport new API for resetting all modules
 

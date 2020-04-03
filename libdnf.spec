@@ -52,13 +52,15 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 # Until https://github.com/rpm-software-management/libdnf/pull/910 is released
 Patch1:         Reset-active-modules-when-no-module-enabled-or-default-RhBug-1767351.patch
+# Until https://github.com/rpm-software-management/libdnf/pull/914 is released
+Patch2:         Use-libsolv-selection-for-filtering-DepSolvables-RhBug-1812596.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -295,6 +297,9 @@ popd
 %endif
 
 %changelog
+* Fri Apr 03 2020 Ales Matej <amatej@redhat.com> - 0.45.0-3
+- Backport patch to fix filtering of DepSolvables with source rpms (RhBug:1812596)
+
 * Fri Mar 06 2020 Ales Matej <amatej@redhat.com> - 0.45.0-2
 - Backport patch to reset active modules when no module enabled or default (1767351)
 

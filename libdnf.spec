@@ -1,10 +1,10 @@
 %global libsolv_version 0.7.7
 %global libmodulemd_version 2.5.0
-%global librepo_version 1.11.0
+%global librepo_version 1.11.3
 %global dnf_conflict 4.2.13
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 45
+%global libdnf_minor_version 47
 %global libdnf_micro_version 0
 
 # set sphinx package name according to distro
@@ -52,15 +52,11 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        3%{?dist}
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-# Until https://github.com/rpm-software-management/libdnf/pull/910 is released
-Patch1:         Reset-active-modules-when-no-module-enabled-or-default-RhBug-1767351.patch
-# Until https://github.com/rpm-software-management/libdnf/pull/914 is released
-Patch2:         Use-libsolv-selection-for-filtering-DepSolvables-RhBug-1812596.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -297,6 +293,24 @@ popd
 %endif
 
 %changelog
+* Wed Apr 08 2020 Nicola Sella <nsella@redhat.com> - 0.47.0-1
+- Update to 0.47.0
+- Add prereq_ignoreinst & regular_requires properties for pkg (RhBug:1543449)
+- Reset active modules when no module enabled or default (RhBug:1767351)
+- Add comment option to transaction (RhBug:1773679)
+- Failing to get module defauls is a recoverable error
+- Baseurl is not exclusive with mirrorlist/metalink (RhBug: 1775184)
+- Add new function to reset all modules in C API (dnf_context_reset_all_modules)
+- [context] Fix to preserve additionalMetadata content (RhBug:1808677)
+- Fix filtering of DepSolvables with source rpms (RhBug:1812596)
+- Add setter for running kernel protection setting
+- Handle situation when an unprivileged user cannot create history database (RhBug:1634385)
+- Add query filter: latest by priority
+- Add DNF_NO_PROTECTED flag to allow empty list of protected packages
+- Remove 'dim' option from terminal colors to make them more readable (RhBug:1807774,1814563)
+- [context] Error when main config file can't be opened (RhBug:1794864)
+- [context] Add function function dnf_context_is_set_config_file_path
+
 * Fri Apr 03 2020 Ales Matej <amatej@redhat.com> - 0.45.0-3
 - Backport patch to fix filtering of DepSolvables with source rpms (RhBug:1812596)
 

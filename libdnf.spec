@@ -52,7 +52,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -293,6 +293,9 @@ popd
 %endif
 
 %changelog
+* Tue Apr 21 2020 Björn Esser <besser82@fedoraproject.org> - 0.47.0-2
+- Rebuild (json-c)
+
 * Wed Apr 01 2020 Ales Matej <amatej@redhat.com> - 0.47.0-1
 - Update to 0.47.0
 - Add prereq_ignoreinst & regular_requires properties for pkg (RhBug:1543449)

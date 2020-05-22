@@ -52,7 +52,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -293,6 +293,9 @@ popd
 %endif
 
 %changelog
+* Fri May 22 2020 Miro Hrončok <mhroncok@redhat.com> - 0.47.0-3
+- Rebuilt for Python 3.9
+
 * Tue Apr 21 2020 Björn Esser <besser82@fedoraproject.org> - 0.47.0-2
 - Rebuild (json-c)
 

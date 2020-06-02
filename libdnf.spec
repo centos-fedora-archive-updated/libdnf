@@ -1,10 +1,10 @@
 %global libsolv_version 0.7.7
 %global libmodulemd_version 2.5.0
-%global librepo_version 1.11.3
-%global dnf_conflict 4.2.13
+%global librepo_version 1.12.0
+%global dnf_conflict 4.2.23
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 47
+%global libdnf_minor_version 48
 %global libdnf_micro_version 0
 
 # set sphinx package name according to distro
@@ -46,6 +46,8 @@
 %bcond_without zchunk
 %endif
 
+%bcond_with sanitizers
+
 %global _cmake_opts \\\
     -DENABLE_RHSM_SUPPORT=%{?with_rhsm:ON}%{!?with_rhsm:OFF} \\\
     %{nil}
@@ -84,6 +86,12 @@ BuildRequires:  pkgconfig(modulemd-2.0) >= %{libmodulemd_version}
 BuildRequires:  pkgconfig(smartcols)
 BuildRequires:  gettext
 BuildRequires:  gpgme-devel
+
+%if %{with sanitizers}
+BuildRequires:  libasan-static
+BuildRequires:  liblsan-static
+BuildRequires:  libubsan-static
+%endif
 
 Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
 Requires:       libsolv%{?_isa} >= %{libsolv_version}
@@ -127,7 +135,8 @@ BuildRequires:  swig >= %{swig_version}
 
 %description -n python2-%{name}
 Python 2 bindings for the libdnf library.
-%endif # with python2
+%endif
+# endif with python2
 
 %if %{with python3}
 %package -n python3-%{name}
@@ -161,7 +170,8 @@ Conflicts:      python-dnf < %{dnf_conflict}
 
 %description -n python2-hawkey
 Python 2 bindings for the hawkey library.
-%endif # with python2
+%endif
+# endif with python2
 
 %if %{with python3}
 %package -n python3-hawkey
@@ -185,7 +195,7 @@ Python 3 bindings for the hawkey library.
 %autosetup -p1
 %if %{with python2}
 mkdir build-py2
-%endif # with python2
+%endif
 %if %{with python3}
 mkdir build-py3
 %endif
@@ -198,10 +208,12 @@ pushd build-py2
     %define _cmake_builddir build-py2
     %define __builddir build-py2
   %endif
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts} -DLIBDNF_MAJOR_VERSION=%{libdnf_major_version} -DLIBDNF_MINOR_VERSION=%{libdnf_minor_version} -DLIBDNF_MICRO_VERSION=%{libdnf_micro_version}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python2} -DWITH_MAN=OFF ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts} -DLIBDNF_MAJOR_VERSION=%{libdnf_major_version} -DLIBDNF_MINOR_VERSION=%{libdnf_minor_version} -DLIBDNF_MICRO_VERSION=%{libdnf_micro_version} \
+    -DWITH_SANITIZERS=%{?with_sanitizers:ON}%{!?with_sanitizers:OFF}
   %make_build
 popd
-%endif # with python2
+%endif
+# endif with python2
 
 %if %{with python3}
 pushd build-py3
@@ -210,7 +222,8 @@ pushd build-py3
     %define _cmake_builddir build-py3
     %define __builddir build-py3
   %endif
-  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts} -DLIBDNF_MAJOR_VERSION=%{libdnf_major_version} -DLIBDNF_MINOR_VERSION=%{libdnf_minor_version} -DLIBDNF_MICRO_VERSION=%{libdnf_micro_version}
+  %cmake -DPYTHON_DESIRED:FILEPATH=%{__python3} -DWITH_GIR=0 -DWITH_MAN=0 -Dgtkdoc=0 ../ %{!?with_zchunk:-DWITH_ZCHUNK=OFF} %{!?with_valgrind:-DDISABLE_VALGRIND=1} %{_cmake_opts} -DLIBDNF_MAJOR_VERSION=%{libdnf_major_version} -DLIBDNF_MINOR_VERSION=%{libdnf_minor_version} -DLIBDNF_MICRO_VERSION=%{libdnf_micro_version} \
+    -DWITH_SANITIZERS=%{?with_sanitizers:ON}%{!?with_sanitizers:OFF}
   %make_build
 popd
 %endif
@@ -220,7 +233,7 @@ popd
 pushd build-py2
   make ARGS="-V" test
 popd
-%endif # with python2
+%endif
 %if %{with python3}
 # If we didn't run the general tests yet, do it now.
 %if %{without python2}
@@ -242,7 +255,7 @@ popd
 pushd build-py2
   %make_install
 popd
-%endif # with python2
+%endif
 %if %{with python3}
 pushd build-py3
   %make_install
@@ -275,7 +288,7 @@ popd
 %if %{with python2}
 %files -n python2-%{name}
 %{python2_sitearch}/%{name}/
-%endif # with python2
+%endif
 
 %if %{with python3}
 %files -n python3-%{name}
@@ -285,7 +298,7 @@ popd
 %if %{with python2}
 %files -n python2-hawkey
 %{python2_sitearch}/hawkey/
-%endif # with python2
+%endif
 
 %if %{with python3}
 %files -n python3-hawkey
@@ -293,6 +306,34 @@ popd
 %endif
 
 %changelog
+* Tue Jun 02 2020 Nicola Sella <nsella@redhat.com> - 0.48.0-1
+- Update to 0.48.0
+- swdb: Catch only SQLite3 exceptions and simplify the messages
+- MergedTransaction list multiple comments (RhBug:1773679)
+- Modify CMake to pull *.po files from weblate
+- Optimize DependencyContainer creation from an existing queue
+- fix a memory leak in dnf_package_get_requires()
+- Fix memory leaks on g_build_filename()
+- Fix memory leak in dnf_context_setup()
+- Add `hy_goal_favor` and `hy_goal_disfavor`
+- Define a cleanup function for `DnfPackageSet`
+- dnf-repo: fix dnf_repo_get_public_keys double-free
+- Do not cache RPMDB
+- Use single-quotes around string literals used in SQL statements
+- SQLite3: Do not close the database if it wasn't opened (RhBug:1761976)
+- Don't create a new history DB connection for in-memory DB
+- transaction/Swdb: Use a single logger variable in constructor
+- utils: Add a safe version of pathExists()
+- swdb: Handle the case when pathExists() fails on e.g. permission
+- Repo: prepend "file://" if a local path is used as baseurl
+- Move urlEncode() to utils
+- utils: Add 'exclude' argument to urlEncode()
+- Encode package URL for downloading through librepo (RhBug:1817130)
+- Replace std::runtime_error with libdnf::RepoError
+- Fixes and error handling improvements of the File class
+- [context] Use ConfigRepo for gpgkey and baseurl (RhBug:1807864)
+- [context] support "priority" option in .repo config file (RhBug:1797265)
+
 * Wed Apr 01 2020 Ales Matej <amatej@redhat.com> - 0.47.0-1
 - Update to 0.47.0
 - Add prereq_ignoreinst & regular_requires properties for pkg (RhBug:1543449)

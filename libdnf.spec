@@ -7,6 +7,8 @@
 %global libdnf_minor_version 48
 %global libdnf_micro_version 0
 
+%define __cmake_in_source_build 1
+
 # set sphinx package name according to distro
 %global requires_python2_sphinx python2-sphinx
 %global requires_python3_sphinx python3-sphinx
@@ -54,11 +56,12 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch1:         0001-tests-Fix-incorrect-usage-of-the-fail-unless-macro.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -306,6 +309,10 @@ popd
 %endif
 
 %changelog
+* Mon Aug 10 2020 Nicola Sella <nsella@redhat.com> - 0.48.0-4
+- spec: Fix building with new cmake macros
+- tests: Fix incorrect usage of the fail_unless macros
+
 * Sat Aug 01 2020 Fedora Release Engineering <releng@fedoraproject.org> - 0.48.0-3
 - Second attempt - Rebuilt for
   https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild

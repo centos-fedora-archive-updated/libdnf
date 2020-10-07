@@ -4,8 +4,8 @@
 %global dnf_conflict 4.2.23
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 48
-%global libdnf_micro_version 0
+%global libdnf_minor_version 54
+%global libdnf_micro_version 2
 
 %define __cmake_in_source_build 1
 
@@ -56,12 +56,11 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        4%{?dist}
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
-Patch1:         0001-tests-Fix-incorrect-usage-of-the-fail-unless-macro.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -309,6 +308,24 @@ popd
 %endif
 
 %changelog
+* Wed Oct 07 2020 Nicola Sella <nsella@redhat.com> - 0.54.2-1
+- Update to 0.54.2
+- history: Fix dnf history rollback when a package was removed (RhBug:1683134)
+- Add support for HY_GT, HY_LT in query nevra_strict
+- Fix parsing empty lines in config files
+- Accept '==' as an operator in reldeps (RhBug:1847946)
+- Add log file level main config option (RhBug:1802074)
+- Add protect_running_kernel configuration option (RhBug:1698145)
+- Context part of libdnf cannot assume zchunk is on (RhBug:1851841,1779104)
+- Fix memory leak of resultingModuleIndex and handle g_object refs
+- Redirect librepo logs to libdnf logs with different source
+- Introduce changelog metadata in commit messages
+- Add hy_goal_lock
+- Update Copr targets for packit and use alias
+- Enum/String conversions for Transaction Store/Replay
+- utils: Add a method to decode URLs
+- Unify hawkey.log line format with the rest of the logs
+
 * Mon Aug 10 2020 Nicola Sella <nsella@redhat.com> - 0.48.0-4
 - spec: Fix building with new cmake macros
 - tests: Fix incorrect usage of the fail_unless macros

@@ -1,7 +1,7 @@
 %global libsolv_version 0.7.7
 %global libmodulemd_version 2.5.0
 %global librepo_version 1.12.0
-%global dnf_conflict 4.2.23
+%global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
 %global libdnf_minor_version 54
@@ -56,7 +56,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -308,6 +308,9 @@ popd
 %endif
 
 %changelog
+* Tue Oct 13 2020 Ales Matej <amatej@redhat.com> - 0.54.2-2
+- Increase needed conflicting dnf version
+
 * Wed Oct 07 2020 Nicola Sella <nsella@redhat.com> - 0.54.2-1
 - Update to 0.54.2
 - history: Fix dnf history rollback when a package was removed (RhBug:1683134)

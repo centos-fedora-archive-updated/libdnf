@@ -56,7 +56,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -308,6 +308,9 @@ popd
 %endif
 
 %changelog
+* Thu Oct 29 2020 Adam Williamson <awilliam@redhat.com> - 0.54.2-3
+- Rebuild to keep NVR ahead of Fedora 32
+
 * Tue Oct 13 2020 Ales Matej <amatej@redhat.com> - 0.54.2-2
 - Increase needed conflicting dnf version
 

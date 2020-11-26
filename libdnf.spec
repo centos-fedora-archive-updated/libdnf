@@ -4,8 +4,10 @@
 %global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 54
-%global libdnf_micro_version 2
+%global libdnf_minor_version 55
+%global libdnf_micro_version 0
+
+%define __cmake_in_source_build 1
 
 # set sphinx package name according to distro
 %global requires_python2_sphinx python2-sphinx
@@ -306,6 +308,16 @@ popd
 %endif
 
 %changelog
+* Thu Nov 26 2020 Nicola Sella <nsella@redhat.com> - 0.55.0-1
+- Update to 0.55.0
+- Add vendor to dnf API (RhBug:1876561)
+- Add formatting function for solver error
+- Add error types in ModulePackageContainer
+- Implement module enable for context part
+- Improve string formatting for translation
+- Remove redundant printf and change logging info to notice (RhBug:1827424)
+- Add allow_vendor_change option (RhBug:1788371) (RhBug:1788371)
+
 * Mon Oct 19 2020 Ales Matej <amatej@redhat.com> - 0.54.2-3
 - Rebuild to fix Fedora lower version caused by pushing older bodhi update later
 

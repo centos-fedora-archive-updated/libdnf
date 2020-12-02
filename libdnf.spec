@@ -5,7 +5,7 @@
 %global swig_version 3.0.12
 %global libdnf_major_version 0
 %global libdnf_minor_version 55
-%global libdnf_micro_version 0
+%global libdnf_micro_version 2
 
 %define __cmake_in_source_build 1
 
@@ -56,7 +56,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        3%{?dist}
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -90,9 +90,9 @@ BuildRequires:  gettext
 BuildRequires:  gpgme-devel
 
 %if %{with sanitizers}
-BuildRequires:  libasan-static
-BuildRequires:  liblsan-static
-BuildRequires:  libubsan-static
+BuildRequires:  libasan
+BuildRequires:  liblsan
+BuildRequires:  libubsan
 %endif
 
 Requires:       libmodulemd%{?_isa} >= %{libmodulemd_version}
@@ -280,6 +280,9 @@ popd
 %dir %{_libdir}/libdnf/
 %dir %{_libdir}/libdnf/plugins/
 %{_libdir}/libdnf/plugins/README
+%if %{with sanitizers}
+%{_sysconfdir}/profile.d/dnf-sanitizers.sh
+%endif
 
 %files devel
 %doc %{_datadir}/gtk-doc/html/%{name}/
@@ -308,7 +311,17 @@ popd
 %endif
 
 %changelog
-* Mon 23 Nov 2020 Nicola Sella <nsella@redhat.com> - 0.55.0-1
+* Wed Dec 02 2020 Nicola Sella <nsella@redhat.com> - 0.55.2-1
+- Update to 0.55.2
+- Improve performance of query installed() and available()
+- Swdb: Add a method to get the current transaction
+- [modules] Add special handling for src artifacts (RhBug:1809314)
+- Better msgs if "basecachedir" or "proxy_password" isn't set (RhBug:1888946)
+- Add new options module_stream_switch
+- Support allow_vendor_change setting in dnf context API
+- Fix couple of sanitizer builds in specfile
+
+* Mon Nov 23 2020 Nicola Sella <nsella@redhat.com> - 0.55.0-1
 - Update to 0.55.0
 - Add vendor to dnf API (RhBug:1876561)
 - Add formatting function for solver error

@@ -181,6 +181,7 @@ Summary:        Python 3 bindings for the hawkey library
 %{?python_provide:%python_provide python3-hawkey}
 BuildRequires:  python3-devel
 BuildRequires:  python3-nose
+BuildRequires: make
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       python3-%{name} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility

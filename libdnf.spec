@@ -1,11 +1,11 @@
 %global libsolv_version 0.7.7
-%global libmodulemd_version 2.5.0
+%global libmodulemd_version 2.11.2-2
 %global librepo_version 1.12.0
 %global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 55
-%global libdnf_micro_version 2
+%global libdnf_minor_version 58
+%global libdnf_micro_version 0
 
 %define __cmake_in_source_build 1
 
@@ -56,7 +56,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -312,6 +312,25 @@ popd
 %endif
 
 %changelog
+* Thu Jan 28 2021 Nicola Sella <nsella@redhat.com> - 0.58.0-1
+- Update to 0.58.0
+- Option: Add reset() method
+- Add OptionBinds::getOption() method
+- [context] Add dnf_repo_conf_from_gkeyfile() and dnf_repo_conf_reset()
+- [context] Add support for options: minrate, throttle, bandwidth, timeout
+- [context] Remove g_key_file_get_string() from dnf_repo_set_keyfile_data()
+- Allow loading ext metadata even if only cache (solv) is present
+- Add ASAN_OPTIONS for test_libdnf_main
+- [context,API] Functions for accessing main/global configuration options
+- [context,API] Function for adding setopt
+- Add getter for modular obsoletes from ModuleMetadata
+- Add ModulePackage.getStaticContext() and getRequires()
+- Add compatible layer for MdDocuments v2
+- Fix modular queries with the new solver
+- Improve formatting of error string for modules
+- Change mechanism of module conflicts
+- Fix load/update FailSafe
+
 * Tue Jan 26 2021 Fedora Release Engineering <releng@fedoraproject.org> - 0.55.2-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
 

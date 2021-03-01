@@ -4,8 +4,8 @@
 %global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 55
-%global libdnf_micro_version 2
+%global libdnf_minor_version 58
+%global libdnf_micro_version 0
 
 %define __cmake_in_source_build 1
 
@@ -311,6 +311,25 @@ popd
 %endif
 
 %changelog
+* Mon Mar 01 2021 Nicola Sella <nsella@redhat.com> - 0.58.0-1
+- Update to 0.58.0
+- Option: Add reset() method
+- Add OptionBinds::getOption() method
+- [context] Add dnf_repo_conf_from_gkeyfile() and dnf_repo_conf_reset()
+- [context] Add support for options: minrate, throttle, bandwidth, timeout
+- [context] Remove g_key_file_get_string() from dnf_repo_set_keyfile_data()
+- Add ASAN_OPTIONS for test_libdnf_main
+- [context,API] Functions for accessing main/global configuration options
+- [context,API] Function for adding setopt
+- Add getter for modular obsoletes from ModuleMetadata
+- Add ModulePackage.getStaticContext() and getRequires()
+- Add compatible layer for MdDocuments v2
+- Fix modular queries with the new solver
+- Improve formatting of error string for modules
+- Fix load/update FailSafe
+- Add a new option module_obsoletes
+- Add new API applyObsoletes() function to apply modular obsoletes
+
 * Wed Dec 02 2020 Nicola Sella <nsella@redhat.com> - 0.55.2-1
 - Update to 0.55.2
 - Improve performance of query installed() and available()

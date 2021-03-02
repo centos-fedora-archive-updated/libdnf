@@ -1,10 +1,10 @@
-%global libsolv_version 0.7.7
+%global libsolv_version 0.7.17
 %global libmodulemd_version 2.11.2-2
-%global librepo_version 1.12.0
+%global librepo_version 1.13.0
 %global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 58
+%global libdnf_minor_version 60
 %global libdnf_micro_version 0
 
 %define __cmake_in_source_build 1
@@ -181,7 +181,6 @@ Summary:        Python 3 bindings for the hawkey library
 %{?python_provide:%python_provide python3-hawkey}
 BuildRequires:  python3-devel
 BuildRequires:  python3-nose
-BuildRequires: make
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       python3-%{name} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility
@@ -312,6 +311,26 @@ popd
 %endif
 
 %changelog
+* Tue Mar 02 2021 Nicola Sella <nsella@redhat.com> - 0.60.0-1
+- Update to 0.60.0
+- Fix repo.fresh() implementation
+- build-sys: Add ENABLE_STATIC option
+- Fix: Fully set ssl in newHandle function
+- [conf] Add options for working with certificates used with proxy
+- Apply proxy certificate options
+- lock: Switch return-if-fail to assert to quiet gcc -fanalyzer
+- build-sys: Clean up message about Python bindings
+- Modify module NSVCA parsing - context definition (RhBug:1926771)
+- [context] Fix: dnf_package_is_installonly (RhBug:1928056)
+- Fix problematic language
+- Add getApplicablePackages to advisory and isApplicable to advisorymodule
+- Keep isAdvisoryApplicable to preserve API
+- Run ModulePackageContainerTest tests in tmpdir, merge interdependent
+- [context] Support config file option "proxy_auth_method", defaults "any"
+- Support main config file option "installonlypkgs".
+- Support main config file option "protected_packages".
+- Properly handle multiple collections in updateinfo.xml (RhBug:1804234)
+
 * Thu Jan 28 2021 Nicola Sella <nsella@redhat.com> - 0.58.0-1
 - Update to 0.58.0
 - Option: Add reset() method

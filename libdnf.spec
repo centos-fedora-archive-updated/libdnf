@@ -1,10 +1,10 @@
 %global libsolv_version 0.7.17
 %global libmodulemd_version 2.11.2-2
-%global librepo_version 1.13.0
+%global librepo_version 1.13.1
 %global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 60
+%global libdnf_minor_version 62
 %global libdnf_micro_version 0
 
 %define __cmake_in_source_build 1
@@ -158,11 +158,6 @@ Python 3 bindings for the libdnf library.
 Summary:        Python 2 bindings for the hawkey library
 %{?python_provide:%python_provide python2-hawkey}
 BuildRequires:  python2-devel
-%if 0%{?rhel} && 0%{?rhel} <= 7
-BuildRequires:  python-nose
-%else
-BuildRequires:  python2-nose
-%endif
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       python2-%{name} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility
@@ -180,7 +175,6 @@ Python 2 bindings for the hawkey library.
 Summary:        Python 3 bindings for the hawkey library
 %{?python_provide:%python_provide python3-hawkey}
 BuildRequires:  python3-devel
-BuildRequires:  python3-nose
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       python3-%{name} = %{version}-%{release}
 # Fix problem with hawkey - dnf version incompatibility
@@ -311,6 +305,23 @@ popd
 %endif
 
 %changelog
+* Thu May 13 2021 Nicola Sella <nsella@redhat.com> - 0.62.0-1
+- Update to 0.62.0
+- Fix: Fully set ssl in newHandle function
+- [conf] Add options for working with certificates used with proxy
+- lock: Switch return-if-fail to assert to quiet gcc -fanalyzer
+- Modify module NSVCA parsing - context definition (RhBug:1926771)
+- libdnf.h: Remove overall extern "C"
+- [context] Fix: dnf_package_is_installonly (RhBug:1928056)
+- Fix problematic language
+- Add getApplicablePackages to advisory and isApplicable to advisorymodule
+- Keep isAdvisoryApplicable to preserve API
+- Run ModulePackageContainerTest tests in tmpdir, merge interdependent
+- [context] Support config file option "proxy_auth_method", defaults "any"
+- Hardening: add signature check with rpmcliVerifySignatures (RhBug:1932079)
+- do not allow 1 as installonly_limit value (RhBug:1926261)
+- Add a config option to check TLS certificate revocation status (using OCSP stapling), defaults to false (RhBug:1814383)
+
 * Tue Mar 02 2021 Nicola Sella <nsella@redhat.com> - 0.60.0-1
 - Update to 0.60.0
 - Fix repo.fresh() implementation

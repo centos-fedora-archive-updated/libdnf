@@ -4,8 +4,8 @@
 %global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 62
-%global libdnf_micro_version 0
+%global libdnf_minor_version 63
+%global libdnf_micro_version 1
 
 %define __cmake_in_source_build 1
 
@@ -305,6 +305,17 @@ popd
 %endif
 
 %changelog
+* Tue Jun 15 2021 Pavla Kratochvilova <pkratoch@redhat.com> - 0.63.1-1
+- Update to 0.63.1
+- ModuleProfile: add isDefault()
+- ModulePackage: add getDefaultProfile()
+- Add new dnf_context_module_install() C API
+- Fix a crash when [media] section in .treeinfo is missing for bootable media (RhBug:1946024)
+- Add hy_query_get_advisory_pkgs to C API (RhBug:1960561)
+- Add dnf_advisorypkg_get_advisory()
+- DNF does not fail on non UTF-8 file names in a package (RhBug:1893176)
+- Improve error-reporting for modular functions
+
 * Thu Apr 15 2021 Nicola Sella <nsella@redhat.com> - 0.62.0-1
 - Fix: Fully set ssl in newHandle function
 - [conf] Add options for working with certificates used with proxy

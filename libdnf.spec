@@ -1,11 +1,11 @@
 %global libsolv_version 0.7.17
-%global libmodulemd_version 2.11.2-2
+%global libmodulemd_version 2.13.0
 %global librepo_version 1.13.1
 %global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 63
-%global libdnf_micro_version 1
+%global libdnf_minor_version 64
+%global libdnf_micro_version 0
 
 %define __cmake_in_source_build 1
 
@@ -305,6 +305,13 @@ popd
 %endif
 
 %changelog
+* Thu Sep 23 2021 Pavla Kratochvilova <pkratoch@redhat.com> - 0.64.0-1
+- Update to 0.64.0
+- Implement logic for demodularization of modular rpms (RhBug:1805260)
+- DnfContext: fix handling of default module profiles
+- ModuleMetadata: gracefully handle modules with no defaults
+- Remove failovermethod config option (RhBug:1961083)
+
 * Tue Jun 15 2021 Pavla Kratochvilova <pkratoch@redhat.com> - 0.63.1-1
 - Update to 0.63.1
 - ModuleProfile: add isDefault()

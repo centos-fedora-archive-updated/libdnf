@@ -1,0 +1,27 @@
+From 64a97203a656c8ee964b49c88e1514e53b92ad2e Mon Sep 17 00:00:00 2001
+From: Jaroslav Mracek <jmracek@redhat.com>
+Date: Fri, 28 Jan 2022 07:53:33 +0100
+Subject: [PATCH] Revert upstream configuration exclude_from_weak_autodetect to false
+
+The patch is required for Fedora < 35 and RHEL8 if
+exclude_from_weak_autodetect will be backported.
+---
+ libdnf/conf/ConfigMain.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libdnf/conf/ConfigMain.cpp b/libdnf/conf/ConfigMain.cpp
+index 3abcee6..7e8735c 100644
+--- a/libdnf/conf/ConfigMain.cpp
++++ b/libdnf/conf/ConfigMain.cpp
+@@ -299,7 +299,7 @@ class ConfigMain::Impl {
+     OptionStringList excludepkgs{std::vector<std::string>{}};
+     OptionStringList includepkgs{std::vector<std::string>{}};
+     OptionStringList exclude_from_weak{std::vector<std::string>{}};
+-    OptionBool exclude_from_weak_autodetect{true};
++    OptionBool exclude_from_weak_autodetect{false};
+     OptionString proxy{""};
+     OptionString proxy_username{nullptr};
+     OptionString proxy_password{nullptr};
+--
+libgit2 1.1.0
+

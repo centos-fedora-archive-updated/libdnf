@@ -1,10 +1,10 @@
-%global libsolv_version 0.7.17
+%global libsolv_version 0.7.20
 %global libmodulemd_version 2.13.0
 %global librepo_version 1.13.1
 %global dnf_conflict 4.3.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 64
+%global libdnf_minor_version 65
 %global libdnf_micro_version 0
 
 %define __cmake_in_source_build 1
@@ -305,6 +305,12 @@ popd
 %endif
 
 %changelog
+* Thu Oct 21 2021 Pavla Kratochvilova <pkratoch@redhat.com> - 0.65.0-1
+- Update to 0.65.0
+- Add support for excluding packages to be installed as weak dependencies
+- Add support for autodetecting packages to be excluded from being installed as weak dependencies
+- Turn off strict validation of modulemd documents (RhBug:2004853,2007166,2007167)
+
 * Thu Sep 23 2021 Pavla Kratochvilova <pkratoch@redhat.com> - 0.64.0-1
 - Update to 0.64.0
 - Implement logic for demodularization of modular rpms (RhBug:1805260)

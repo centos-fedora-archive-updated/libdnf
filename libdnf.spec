@@ -56,11 +56,12 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch1:         0001-Skip-rich-deps-for-autodetection-of-unmet-dependencies.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -305,6 +306,9 @@ popd
 %endif
 
 %changelog
+* Mon Feb 21 2022 Pavla Kratochvilova <pkratoch@redhat.com> - 0.65.0-3
+- Skip rich deps for autodetection of unmet dependencies (RhBug:2033130)
+
 * Thu Jan 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 0.65.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
 

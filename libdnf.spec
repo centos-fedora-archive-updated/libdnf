@@ -1,4 +1,4 @@
-%global libsolv_version 0.7.20
+%global libsolv_version 0.7.21
 %global libmodulemd_version 2.13.0
 %global librepo_version 1.13.1
 %global dnf_conflict 4.11.0
@@ -56,7 +56,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -304,6 +304,9 @@ popd
 %endif
 
 %changelog
+* Thu May 05 2022 Jaroslav Rohel <jrohel@redhat.com> - 0.67.0-2
+- Increase required libsolv version for cache versioning to 0.7.21
+
 * Thu May 05 2022 Jaroslav Rohel <jrohel@redhat.com> - 0.67.0-1
 - Update to 0.67.0
 - Add 'loongarch' support

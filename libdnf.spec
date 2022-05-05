@@ -4,7 +4,7 @@
 %global dnf_conflict 4.11.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 66
+%global libdnf_minor_version 67
 %global libdnf_micro_version 0
 
 %define __cmake_in_source_build 1
@@ -305,6 +305,13 @@ popd
 %endif
 
 %changelog
+* Thu May 05 2022 Jaroslav Rohel <jrohel@redhat.com> - 0.67.0-1
+- Update to 0.67.0
+- Add 'loongarch' support
+- Use dnf solv userdata to check versions and checksum (RhBug:2027445)
+- context: Substitute all repository config options (RhBug:2076853)
+- Add more specific error handling for loading repomd and primary
+
 * Tue Mar 15 2022 Pavla Kratochvilova <pkratoch@redhat.com> - 0.66.0-1
 - Update to 0.66.0
 - Use `rpmdbCookie` from librpm, remove `hawkey.Sack._rpmdb_version`

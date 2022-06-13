@@ -56,7 +56,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -304,6 +304,9 @@ popd
 %endif
 
 %changelog
+* Mon Jun 13 2022 Python Maint <python-maint@redhat.com> - 0.67.0-3
+- Rebuilt for Python 3.11
+
 * Thu May 05 2022 Jaroslav Rohel <jrohel@redhat.com> - 0.67.0-2
 - Increase required libsolv version for cache versioning to 0.7.21
 

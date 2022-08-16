@@ -4,7 +4,7 @@
 %global dnf_conflict 4.11.0
 %global swig_version 3.0.12
 %global libdnf_major_version 0
-%global libdnf_minor_version 67
+%global libdnf_minor_version 68
 %global libdnf_micro_version 0
 
 %define __cmake_in_source_build 1
@@ -56,7 +56,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        4%{?dist}
+Release:        1%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -304,6 +304,14 @@ popd
 %endif
 
 %changelog
+* Tue Aug 16 2022 Jaroslav Rohel <jrohel@redhat.com> - 0.68.0-1
+- Update to 0.68.0
+- context: Support <package-spec> (NEVRA forms, provides, file provides) including globs in the dnf_context_remove func (RhBug:2084602)
+- dnf-context: Disconnect signal handler before dropping file monitor ref
+- Filter out advisory pkgs with different arch during advisory upgrade, fixes possible problems in dependency resulution (RhBug:2088149)
+- Gracefully handle failure to open repo primary file
+- Fix listing a repository without cpeid (RhBug:2066334)
+
 * Thu Jul 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 0.67.0-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
 

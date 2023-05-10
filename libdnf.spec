@@ -56,7 +56,7 @@
 
 Name:           libdnf
 Version:        %{libdnf_major_version}.%{libdnf_minor_version}.%{libdnf_micro_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPLv2+
 URL:            https://github.com/rpm-software-management/libdnf
@@ -73,7 +73,7 @@ BuildRequires:  valgrind
 %endif
 BuildRequires:  pkgconfig(gio-unix-2.0) >= 2.46.0
 BuildRequires:  pkgconfig(gtk-doc)
-BuildRequires:  rpm-devel >= 4.15.0
+BuildRequires:  rpm-devel >= 4.18.90
 %if %{with rhsm}
 BuildRequires:  pkgconfig(librhsm) >= 0.0.3
 %endif
@@ -304,6 +304,9 @@ popd
 %endif
 
 %changelog
+* Wed May 10 2023 Florian Festi <ffesti@redhat.com> - 0.70.0-2
+- Rebuild for rpm 4.18.90
+
 * Fri Mar 03 2023 Jan Kolarik <jkolarik@redhat.com> - 0.70.0-1
 - Update to 0.70.0
 - Allow change of architecture for packages during security updates with noarch involved (RhBug:2124483)

@@ -5,7 +5,7 @@
 %global swig_version 3.0.12
 %global libdnf_major_version 0
 %global libdnf_minor_version 70
-%global libdnf_micro_version 1
+%global libdnf_micro_version 2
 
 %define __cmake_in_source_build 1
 
@@ -304,6 +304,12 @@ popd
 %endif
 
 %changelog
+* Fri Jul 28 2023 Nicola Sella <nsella@redhat.com> - 0.70.2-1
+- Update to 0.70.2
+- Support "proxy=none" in main config (RhBug:2155713)
+- Fix #1558: Don't assume inclusion of cstdint
+- Disconnect monitors in dnf_repo_loader_finalize() (RhBug:2070153)
+
 * Mon May 15 2023 Jan Kolarik <jkolarik@redhat.com> - 0.70.1-1
 - Update to 0.70.1
 - Add repoid to solver errors for RPMs (RhBug:2179413)

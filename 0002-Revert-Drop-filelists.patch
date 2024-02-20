@@ -1,0 +1,13 @@
+diff --git a/libdnf/conf/ConfigMain.cpp b/libdnf/conf/ConfigMain.cpp
+index 3f12762a..5e99eefd 100644
+--- a/libdnf/conf/ConfigMain.cpp
++++ b/libdnf/conf/ConfigMain.cpp
+@@ -191,7 +191,7 @@ class ConfigMain::Impl {
+     OptionBool debug_solver{false};
+     OptionStringList installonlypkgs{INSTALLONLYPKGS};
+     OptionStringList group_package_types{GROUP_PACKAGE_TYPES};
+-    OptionStringList optional_metadata_types{std::vector<std::string>{}};
++    OptionStringList optional_metadata_types{std::vector<std::string>{"filelists"}};
+ 
+     OptionNumber<std::uint32_t> installonly_limit{3, 0,
+         [](const std::string & value)->std::uint32_t{

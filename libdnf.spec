@@ -61,6 +61,8 @@ Summary:        Library providing simplified C and Python API to libsolv
 License:        LGPL-2.1-or-later
 URL:            https://github.com/rpm-software-management/libdnf
 Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Patch0:         0001-Revert-Disable-deltarpm.patch
+Patch1:         0002-Revert-Drop-filelists.patch
 
 BuildRequires:  cmake
 BuildRequires:  gcc
@@ -304,10 +306,8 @@ popd
 %endif
 
 %changelog
-* Thu Feb 08 2024 Fedora Release Engineering <releng@fedoraproject.org> - 0.73.0-1
+* Tue Feb 20 2024 Jan Kolarik <jkolarik@redhat.com> - 0.73.0-1
 - Update to 0.73.0
-- filelists metadata loading on demand
-- deltarpm disabled on Fedora
 - conf: Introduce new optional_metadata_types option to load filelists on demand
 - goal: Method for detecting file dependency problems
 

@@ -1,0 +1,13 @@
+diff --git a/libdnf/conf/ConfigMain.cpp b/libdnf/conf/ConfigMain.cpp
+index 3f12762a..109b120d 100644
+--- a/libdnf/conf/ConfigMain.cpp
++++ b/libdnf/conf/ConfigMain.cpp
+@@ -361,7 +361,7 @@ class ConfigMain::Impl {
+     OptionBool proxy_sslverify{true};
+     OptionString proxy_sslclientcert{""};
+     OptionString proxy_sslclientkey{""};
+-    OptionBool deltarpm{false};
++    OptionBool deltarpm{true};
+     OptionNumber<std::uint32_t> deltarpm_percentage{75};
+     OptionBool skip_if_unavailable{false};
+     OptionBool sslverifystatus{false};

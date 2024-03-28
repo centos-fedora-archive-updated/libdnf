@@ -5,7 +5,7 @@
 %global swig_version 3.0.12
 %global libdnf_major_version 0
 %global libdnf_minor_version 73
-%global libdnf_micro_version 0
+%global libdnf_micro_version 1
 
 %define __cmake_in_source_build 1
 
@@ -306,6 +306,14 @@ popd
 %endif
 
 %changelog
+* Thu Mar 28 2024 Evan Goode <egoode@redhat.com> - 0.73.1-1
+- Update to 0.73.1
+- Fix https://issues.redhat.com/browse/RHEL-27657
+- subject-py: Fix memory leak
+- MergedTransaction: Calculate RPM difference between two same versions as no-op
+- Onboard packit tests
+- Add virtual destructor to TransactionItem
+
 * Tue Feb 20 2024 Jan Kolarik <jkolarik@redhat.com> - 0.73.0-1
 - Update to 0.73.0
 - conf: Introduce new optional_metadata_types option to load filelists on demand
